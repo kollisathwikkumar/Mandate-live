@@ -353,7 +353,8 @@ export async function createApiServer(config: ApiServerConfig): Promise<FastifyI
   });
 
   app.addHook('onRequest', async (request, reply) => {
-    if (request.url.startsWith('/api/v1/') && corsAllowedOrigins !== undefined && request.headers.origin !== undefined) {
+    if ((request.url.startsWith('/api/v1/') || request.url === '/health/ready')
+      && corsAllowedOrigins !== undefined && request.headers.origin !== undefined) {
       const origin = request.headers.origin;
       if (!corsAllowedOrigins.includes(origin)) {
         await reply.code(403).send(errorBody('FORBIDDEN', 'Browser origin is not allowed', request.id));

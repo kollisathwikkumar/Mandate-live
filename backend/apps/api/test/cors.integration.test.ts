@@ -41,6 +41,23 @@ describe('API browser-origin policy', () => {
     expect(response.headers['access-control-allow-credentials']).toBeUndefined();
   });
 
+  it('exposes readiness to the configured console origin but not other origins', async () => {
+    const allowed = await app.inject({
+      method: 'GET',
+      url: '/health/ready',
+      headers: { origin: 'https://console.example.test' },
+    });
+    expect(allowed.headers['access-control-allow-origin']).toBe('https://console.example.test');
+
+    const blocked = await app.inject({
+      method: 'GET',
+      url: '/health/ready',
+      headers: { origin: 'https://attacker.example.test' },
+    });
+    expect(blocked.statusCode).toBe(403);
+    expect(blocked.headers['access-control-allow-origin']).toBeUndefined();
+  });
+
   it('rejects a disallowed origin and preflight attempts to use unsupported headers', async () => {
     const blockedOrigin = await app.inject({
       method: 'GET',
