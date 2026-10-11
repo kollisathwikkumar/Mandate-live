@@ -447,6 +447,15 @@ export async function createApiServer(config: ApiServerConfig): Promise<FastifyI
 
   app.setNotFoundHandler((request, reply) => reply.code(404).send(errorBody('RESOURCE_NOT_FOUND', 'The requested route was not found', request.id)));
 
+  app.get('/', async (_request, reply) => reply.code(200).send({
+    service: 'Mandate API',
+    links: {
+      live: '/health/live',
+      readiness: '/health/ready',
+      openapi: '/api/v1/openapi.json',
+    },
+  }));
+
   app.get('/health/live', async (_request, reply) => reply.code(200).send({ status: 'live' }));
   app.get('/health/ready', async (request, reply) => {
     try {

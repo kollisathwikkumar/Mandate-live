@@ -158,6 +158,7 @@ export const openApiDocument = {
   openapi: '3.1.0',
   info: { title: 'Mandate API', version: '1.0.0', description: 'Tenant-scoped agent identity and policy-control API. Except for health probes and the OpenAPI document, /api/v1 requests are limited to 120 per source IP per 60-second window by default. Exhaustion returns 429 RATE_LIMITED and RateLimit-Limit, RateLimit-Remaining, RateLimit-Reset, and Retry-After headers.' },
   paths: {
+    '/': { get: { operationId: 'getApiEntryPoint', responses: { '200': { description: 'API entry point and links to live checks and documentation' } } } },
     '/health/live': { get: { operationId: 'getLiveness', responses: { '200': { description: 'Process is live' } } } },
     '/health/ready': { get: { operationId: 'getReadiness', responses: { '200': { description: 'Dependencies are ready' }, '503': { description: 'A required dependency is unavailable' } } } },
     '/api/v1/openapi.json': { get: { operationId: 'getOpenApiDocument', responses: { '200': { description: 'OpenAPI 3.1 specification' } } } },

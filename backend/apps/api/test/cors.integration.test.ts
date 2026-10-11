@@ -24,6 +24,20 @@ describe('API browser-origin policy', () => {
     await pool.end();
   });
 
+  it('shows the API entrypoint and available live checks at the root URL', async () => {
+    const response = await app.inject({ method: 'GET', url: '/' });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      service: 'Mandate API',
+      links: {
+        live: '/health/live',
+        readiness: '/health/ready',
+        openapi: '/api/v1/openapi.json',
+      },
+    });
+  });
+
   it('answers valid preflight with a precise origin and supported headers without credentials', async () => {
     const response = await app.inject({
       method: 'OPTIONS',
