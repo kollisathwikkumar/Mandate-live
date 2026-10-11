@@ -11,7 +11,7 @@ describe('resolveApiUrl', () => {
   });
 
   it('allows HTTP only for loopback development', () => {
-    expect(resolveApiUrl('/health/ready', 'http://127.0.0.1:3000')).toBe('http://127.0.0.1:3000/health/ready');
+    expect(resolveApiUrl('/ops/readiness', 'http://127.0.0.1:3000')).toBe('http://127.0.0.1:3000/ops/readiness');
     expect(() => resolveApiUrl('/api/v1/me', 'http://api.example')).toThrow('HTTPS origin');
   });
 

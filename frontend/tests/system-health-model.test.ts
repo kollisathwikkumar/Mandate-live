@@ -18,9 +18,10 @@ describe('buildSystemHealthChecks', () => {
     expect(schema[0]?.state).toBe('degraded');
     expect(schema[1]?.state).toBe('degraded');
     expect(schema[2]?.state).toBe('unknown');
-    const offline = buildSystemHealthChecks({ readiness: null, loading: false, error: 'API unavailable', authenticatedProfile: false });
-    expect(offline[0]?.state).toBe('unavailable');
-    expect(offline[1]?.state).toBe('unavailable');
+    const offline = buildSystemHealthChecks({ readiness: null, loading: false, error: 'No response reached the browser; API state is unverified.', authenticatedProfile: false });
+    expect(offline[0]?.state).toBe('unknown');
+    expect(offline[1]?.state).toBe('unknown');
+    expect(offline[0]?.detail).toContain('unverified');
     expect(offline[3]?.state).toBe('unknown');
   });
 

@@ -25,6 +25,11 @@ describe('dependency outage HTTP boundary', () => {
     expect((await app.inject('/health/live')).statusCode).toBe(200);
     expect((await app.inject('/health/ready')).statusCode).toBe(503);
   });
+  it('serves a browser-friendly readiness alias with the same dependency result', async () => {
+    const response = await app.inject('/ops/readiness');
+    expect(response.statusCode).toBe(503);
+    expect(response.json()).toMatchObject({ status: 'not_ready', dependencies: { postgres: 'unavailable' } });
+  });
   it('classifies an unexpected failure as internal without exposing details', async () => {
     const response = await app.inject('/__test/unexpected');
     expect(response.statusCode).toBe(500);

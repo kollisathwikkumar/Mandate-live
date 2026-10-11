@@ -21,7 +21,7 @@ it('renders a secretless registration replay as an explicit recovery state', asy
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, options?: RequestInit) => {
     const path = String(input);
     if (path === '/api/v1/me') return new Response(JSON.stringify({ principal: { type: 'HUMAN', subject: 'owner' }, organizations: [{ organizationId: 'tenant', role: 'OWNER' }] }));
-    if (path === '/health/ready') return new Response('{"status":"ready"}');
+    if (path === '/ops/readiness') return new Response('{"status":"ready"}');
     if (path === '/api/v1/orgs/tenant/agents' && options?.method === 'POST') {
       submittedKey = new Headers(options.headers).get('Idempotency-Key');
       return new Response(JSON.stringify({ agent, replayed: true }), { status: 200 });

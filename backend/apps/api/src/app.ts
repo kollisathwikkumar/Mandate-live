@@ -359,7 +359,7 @@ export async function createApiServer(config: ApiServerConfig): Promise<FastifyI
   });
 
   app.addHook('onRequest', async (request, reply) => {
-    if ((request.url.startsWith('/api/v1/') || request.url === '/health/ready')
+    if ((request.url.startsWith('/api/v1/') || request.url === '/health/ready' || request.url === '/ops/readiness')
       && corsAllowedOrigins !== undefined && request.headers.origin !== undefined) {
       const origin = request.headers.origin;
       if (!corsAllowedOrigins.includes(origin)) {
@@ -453,7 +453,7 @@ export async function createApiServer(config: ApiServerConfig): Promise<FastifyI
 
   app.setNotFoundHandler((request, reply) => {
     const path = request.url.split('?', 1)[0] ?? request.url;
-    const isApiRoute = path.startsWith('/api/') || path.startsWith('/health/') || path.startsWith('/auth/') || path.startsWith('/mcp');
+    const isApiRoute = path.startsWith('/api/') || path.startsWith('/health/') || path.startsWith('/ops/') || path.startsWith('/auth/') || path.startsWith('/mcp');
     if (config.consoleStaticDir !== undefined && !isApiRoute && request.method === 'GET') {
       return reply.code(200).type('text/html').sendFile('index.html');
     }
@@ -466,14 +466,14 @@ export async function createApiServer(config: ApiServerConfig): Promise<FastifyI
       service: 'Mandate API',
       links: {
         live: '/health/live',
-        readiness: '/health/ready',
+        readiness: '/ops/readiness',
         openapi: '/api/v1/openapi.json',
       },
     });
   });
 
   app.get('/health/live', async (_request, reply) => reply.code(200).send({ status: 'live' }));
-  app.get('/health/ready', async (request, reply) => {
+  const readinessHandler = async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       await config.pool.query('SELECT 1');
       const migration = await config.pool.query<{ readonly current: boolean }>(
@@ -487,7 +487,9 @@ export async function createApiServer(config: ApiServerConfig): Promise<FastifyI
     } catch {
       return reply.code(503).send({ status: 'not_ready', dependencies: { postgres: 'unavailable' }, requestId: request.id });
     }
-  });
+  };
+  app.get('/health/ready', readinessHandler);
+  app.get('/ops/readiness', readinessHandler);
 
   app.get('/api/v1/openapi.json', async (_request, reply) => reply.code(200).send(openApiDocument));
 

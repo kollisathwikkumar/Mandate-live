@@ -16,7 +16,7 @@ it('switches shell and page requests together and closes old-tenant forms', asyn
   window.history.replaceState({}, '', '/app/agents');
   const fetcher = vi.fn(async (input: RequestInfo | URL) => {
     const path = String(input);
-    const body = path === '/api/v1/me' ? { principal: { type: 'HUMAN', subject: 'tester' }, organizations: [{ organizationId: 'tenant-a', role: 'OWNER' }, { organizationId: 'tenant-b', role: 'OWNER' }] } : path === '/health/ready' ? { status: 'ready' } : { agents: [] };
+    const body = path === '/api/v1/me' ? { principal: { type: 'HUMAN', subject: 'tester' }, organizations: [{ organizationId: 'tenant-a', role: 'OWNER' }, { organizationId: 'tenant-b', role: 'OWNER' }] } : path === '/ops/readiness' ? { status: 'ready' } : { agents: [] };
     return new Response(JSON.stringify(body), { status: 200 });
   });
   vi.stubGlobal('fetch', fetcher);

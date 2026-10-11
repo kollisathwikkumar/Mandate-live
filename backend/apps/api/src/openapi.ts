@@ -161,6 +161,7 @@ export const openApiDocument = {
     '/': { get: { operationId: 'getApiEntryPoint', responses: { '200': { description: 'Mandate console entrypoint when the built frontend is configured; API service links otherwise' } } } },
     '/health/live': { get: { operationId: 'getLiveness', responses: { '200': { description: 'Process is live' } } } },
     '/health/ready': { get: { operationId: 'getReadiness', responses: { '200': { description: 'Dependencies are ready' }, '503': { description: 'A required dependency is unavailable' } } } },
+    '/ops/readiness': { get: { operationId: 'getConsoleReadiness', responses: { '200': { description: 'API and database readiness for the console' }, '503': { description: 'A required dependency is unavailable' } } } },
     '/api/v1/openapi.json': { get: { operationId: 'getOpenApiDocument', responses: { '200': { description: 'OpenAPI 3.1 specification' } } } },
     '/api/v1/me': {
       get: {

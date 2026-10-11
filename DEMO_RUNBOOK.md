@@ -5,7 +5,8 @@
 ## Live URLs
 
 - Demo UI and API: https://mandate-live.onrender.com/
-- API readiness: https://mandate-live.onrender.com/health/ready
+- Browser readiness: https://mandate-live.onrender.com/ops/readiness
+- Render health check: https://mandate-live.onrender.com/health/ready
 - API contract: https://mandate-live.onrender.com/api/v1/openapi.json
 
 ## What Mandate is built to do
@@ -15,7 +16,7 @@ An agent proposes an exact action. Mandate checks the caller identity, organizat
 ## Verified live behavior
 
 1. The public React landing page and nested `/app/overview` route return HTTP 200 from the `Mandate-live` Web Service. The nested route uses an SPA rewrite to `/index.html`.
-2. The API returns HTTP 200 from `/health/ready` with `postgres: ready` after the checksum-checked migrations. Its unauthenticated `/api/v1/me` response is HTTP 401.
+2. The API returns HTTP 200 from `/ops/readiness` with `postgres: ready` after the checksum-checked migrations. Render's `/health/ready` probe remains available. Its unauthenticated `/api/v1/me` response is HTTP 401.
 3. The API permits preflight requests from exactly the Render frontend origin and denies an unrelated origin with HTTP 403.
 4. Auth0 login reaches the signed-in console. The live API accepted organization creation and returned owner membership; the overview, agent list, and account list loaded from that tenant. The console shows `API connection Connected` based on its authenticated, database-backed profile response.
 5. Backend and frontend builds and unit suites pass locally. See `VERIFICATION.txt` for commands and literal results.

@@ -11,7 +11,7 @@ it('requires exact-hash confirmation before recording the human decision',async(
     const path=String(input);
     if(init?.method==='POST'){writes.push(String(init.body));return Response.json({approval:{outcome:'APPROVED'}});}
     if(path==='/api/v1/me')return Response.json({principal:{type:'HUMAN',subject:'owner'},organizations:[{organizationId:'tenant',role:'OWNER'}]});
-    if(path==='/health/ready')return Response.json({status:'ready'});
+    if(path==='/ops/readiness')return Response.json({status:'ready'});
     return Response.json({actions:[{actionId:'action',policyId:'policy',policyRevision:1,actionHash:hash,state:'HELD',verdict:'HOLD',reason:'APPROVAL_REQUIRED',action:{agentId:'agent',recipient:'recipient',amount:'10'},createdAt:'2026-10-10T00:00:00.000Z',updatedAt:'2026-10-10T00:00:00.000Z'}]});
   }));
   const host=document.createElement('div');document.body.append(host);const root=createRoot(host);

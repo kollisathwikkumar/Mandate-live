@@ -33,7 +33,7 @@ Use the existing service `Mandate-live` (repo `kollisathwikkumar/Mandate-live`, 
 - Set `VITE_OIDC_AUTHORITY`, `VITE_OIDC_CLIENT_ID`, `VITE_OIDC_AUDIENCE`, and `VITE_OIDC_SCOPE` as build-time public values on this same service. Leave `VITE_API_BASE_URL` unset/empty so the console calls the API at its own origin.
 - Set `MANDATE_CORS_ALLOWED_ORIGINS=https://mandate-live.onrender.com` (the same-origin UI does not require CORS; this exact origin remains available for authorized browser tools).
 
-`render.yaml` records the one-service topology and reproducible root-level build/start commands. Existing Render secret variables remain configured in the service dashboard; do not copy secret values into that manifest. `/health/ready` checks PostgreSQL and requires migration `026_activation_operation_journal.sql`; it should return 503 until the schema is current. `/health/live` is liveness only. The Free Web Service sleeps after 15 minutes without traffic, so warm `/health/ready` before the judge demonstration.
+`render.yaml` records the one-service topology and reproducible root-level build/start commands. Existing Render secret variables remain configured in the service dashboard; do not copy secret values into that manifest. `/health/ready` checks PostgreSQL and requires migration `026_activation_operation_journal.sql`; it should return 503 until the schema is current. The console reads `/ops/readiness`, a browser-facing alias of the same result. `/health/live` is liveness only. The Free Web Service sleeps after 15 minutes without traffic, so warm `/health/ready` before the judge demonstration.
 
 ## Auth0 OIDC dashboard setup
 

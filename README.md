@@ -4,7 +4,7 @@
 
 An agent should not receive broad access just because it can call a tool. Mandate separates an agent's proposed action from permission to execute it: the action is checked against an organization-scoped policy, and only an authorized execution path can carry it out.
 
-**Live judge demo:** [mandate-live.onrender.com](https://mandate-live.onrender.com/) serves the React console and API from the existing single Render Web Service. Check [readiness](https://mandate-live.onrender.com/health/ready) and the [API contract](https://mandate-live.onrender.com/api/v1/openapi.json). Deployment settings are recorded in [DEPLOYMENT_RENDER_FREE.md](DEPLOYMENT_RENDER_FREE.md).
+**Live judge demo:** [mandate-live.onrender.com](https://mandate-live.onrender.com/) serves the React console and API from the existing single Render Web Service. Check [console readiness](https://mandate-live.onrender.com/ops/readiness), [Render health](https://mandate-live.onrender.com/health/ready), and the [API contract](https://mandate-live.onrender.com/api/v1/openapi.json). Deployment settings are recorded in [DEPLOYMENT_RENDER_FREE.md](DEPLOYMENT_RENDER_FREE.md).
 
 ## What it does
 
@@ -78,7 +78,7 @@ Mandate follows a **modular-monolith** design: the API, worker, and chain indexe
    npm run dev
    ```
 
-Open the URL printed by Vite. The API exposes `/health/live`, `/health/ready` (including database readiness), and `/api/v1/openapi.json`. Sign-in and organization workflows require a correctly configured OIDC client; there is no default user or authentication bypass.
+Open the URL printed by Vite. The API exposes `/health/live`, `/health/ready` (hosting probe), `/ops/readiness` (console health check), and `/api/v1/openapi.json`. Sign-in and organization workflows require a correctly configured OIDC client; there is no default user or authentication bypass.
 
 ## Validate changes
 

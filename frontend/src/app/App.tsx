@@ -408,7 +408,7 @@ function SystemHealthPage() {
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true); setReadiness(null); setError(null);
-    void apiFetch('/health/ready', { signal: controller.signal })
+    void apiFetch('/ops/readiness', { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok && response.status !== 503) throw new Error(`Readiness endpoint returned HTTP ${response.status}.`);
         const parsed = ReadinessSchema.safeParse(await response.json());

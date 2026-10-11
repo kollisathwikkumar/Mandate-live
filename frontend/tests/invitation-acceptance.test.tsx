@@ -68,7 +68,7 @@ describe('signed-in invitation acceptance', () => {
         accepted = true;
         return Response.json({ organizationId: 'joined-org', role: 'APPROVER', accepted: true });
       }
-      if (path === '/health/ready') return Response.json({ status: 'ready' });
+      if (path === '/ops/readiness') return Response.json({ status: 'ready' });
       return Response.json({ agents: [], policies: [], actions: [], accounts: [], events: [], alerts: [] });
     });
     vi.stubGlobal('fetch', fetcher);

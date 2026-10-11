@@ -32,7 +32,7 @@ describe('API browser-origin policy', () => {
       service: 'Mandate API',
       links: {
         live: '/health/live',
-        readiness: '/health/ready',
+        readiness: '/ops/readiness',
         openapi: '/api/v1/openapi.json',
       },
     });
@@ -70,6 +70,13 @@ describe('API browser-origin policy', () => {
     });
     expect(blocked.statusCode).toBe(403);
     expect(blocked.headers['access-control-allow-origin']).toBeUndefined();
+
+    const consoleAlias = await app.inject({
+      method: 'GET',
+      url: '/ops/readiness',
+      headers: { origin: 'https://console.example.test' },
+    });
+    expect(consoleAlias.headers['access-control-allow-origin']).toBe('https://console.example.test');
   });
 
   it('rejects a disallowed origin and preflight attempts to use unsupported headers', async () => {

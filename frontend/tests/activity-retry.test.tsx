@@ -24,7 +24,7 @@ beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const path = String(input);
     if (path === '/api/v1/me') return new Response(JSON.stringify({ principal: { type: 'HUMAN', subject: 'owner' }, organizations: [{ organizationId: 'tenant', role: 'OWNER' }] }));
-    if (path === '/health/ready') return new Response('{"status":"ready"}');
+    if (path === '/ops/readiness') return new Response('{"status":"ready"}');
     if (path.endsWith('/audit-events?limit=100')) {
       auditReads += 1;
       if (auditReads === 1) return new Response('{"error":{"code":"DEPENDENCY_UNAVAILABLE","message":"Audit read unavailable","requestId":"request-1"}}', { status: 503 });
@@ -65,7 +65,7 @@ it('retries an action detail read and shows the reconciled state returned by the
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const path = String(input);
     if (path === '/api/v1/me') return new Response(JSON.stringify({ principal: { type: 'HUMAN', subject: 'owner' }, organizations: [{ organizationId: 'tenant', role: 'OWNER' }] }));
-    if (path === '/health/ready') return new Response('{"status":"ready"}');
+    if (path === '/ops/readiness') return new Response('{"status":"ready"}');
     if (path.endsWith('/actions/allowed-1')) {
       detailReads += 1;
       if (detailReads === 1) return new Response('{"error":{"code":"DEPENDENCY_UNAVAILABLE","message":"Action read unavailable","requestId":"request-2"}}', { status: 503 });

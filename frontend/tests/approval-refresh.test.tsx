@@ -24,7 +24,7 @@ beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
     const path = String(input);
     if (path === '/api/v1/me') return new Response(JSON.stringify({ principal: { type: 'HUMAN', subject: 'approver' }, organizations: [{ organizationId: 'tenant', role: 'APPROVER' }] }));
-    if (path === '/health/ready') return new Response('{"status":"ready"}');
+    if (path === '/ops/readiness') return new Response('{"status":"ready"}');
     if (path.endsWith('/actions?state=HELD&limit=100')) {
       approvalReads += 1;
       if (failFirstRead && approvalReads === 1) return new Response('{"error":{"code":"DEPENDENCY_UNAVAILABLE","message":"Approval read unavailable","requestId":"request-1"}}', { status: 503 });

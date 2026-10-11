@@ -13,6 +13,7 @@ if (base.protocol !== 'http:' || !['127.0.0.1', 'localhost', '[::1]'].includes(b
 
 const operations = [
   ['get', '/health/ready'],
+  ['get', '/ops/readiness'],
   ['get', '/api/v1/me'],
   ['post', '/api/v1/orgs'],
   ['get', '/api/v1/orgs/{orgId}/agents'],

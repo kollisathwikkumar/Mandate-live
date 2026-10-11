@@ -13,7 +13,7 @@ node --import ./dist/packages/observability/src/register.js ./dist/apps/worker/s
 
 The API requires `DATABASE_URL`, `MANDATE_JWT_ISSUER`, `MANDATE_JWT_JWKS_URL`, and `MANDATE_JWT_AUDIENCE`. In production it also requires `MANDATE_RATE_LIMIT_HMAC_KEY` (at least 32 UTF-8 bytes). Configure exact HTTPS origins with `MANDATE_CORS_ALLOWED_ORIGINS` when the browser console is hosted on another origin. Secrets are injected at runtime by the platform's secret manager; never put them in source or browser build variables.
 
-The API exposes `/health/live` and `/health/ready`. Readiness includes the required database dependency. Use an external OIDC issuer/JWKS and audience; no local identity-provider realm, seeded user, or authentication bypass is included here.
+The API exposes `/health/live` and `/health/ready` for hosting probes, plus `/ops/readiness` for the browser console. Both readiness endpoints check the required database dependency. Use an external OIDC issuer/JWKS and audience; no local identity-provider realm, seeded user, or authentication bypass is included here.
 
 The finalized-chain indexer is included for the chain integration path but is optional for the selected Render onboarding/policy-draft demo. If separately deployed, build from the same `backend` root and start with `node --import ./dist/packages/observability/src/register.js ./dist/apps/chain-indexer/src/server.js`; configure a verified `MANDATE_EVM_RPC_URLS`, `MANDATE_INDEXER_START_BLOCKS`, and finality settings first.
 
