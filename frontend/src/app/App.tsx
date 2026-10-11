@@ -15,6 +15,7 @@ import { getActivityDetailHref } from './activityLinks';
 import { canSwitchOrganization } from './organizationPicker';
 import { buildAuthorizationPath } from './authorizationPathModel';
 import { buildOverviewMetrics } from './overviewMetrics';
+import { apiReadinessState } from './apiReadinessState';
 import { getPolicyEditorState } from './policyEditorState';
 import { validatePolicyDraftReferences } from './policyDraftReferences';
 import { RESOURCE_ID_PATTERN } from './inputPatterns';
@@ -387,21 +388,9 @@ function PageHeader({ eyebrow, title, description, action }: { eyebrow: string; 
 }
 
 function BackendHealthBadge() {
-  const [status, setStatus] = useState<'checking' | 'ready' | 'unavailable'>('checking');
-  useEffect(() => {
-    let alive = true;
-    const check = async () => {
-      try {
-        const response = await apiFetch('/health/ready');
-        const result = z.object({ status: z.literal('ready') }).safeParse(await response.json());
-        if (alive) setStatus(response.ok && result.success ? 'ready' : 'unavailable');
-      } catch { if (alive) setStatus('unavailable'); }
-    };
-    void check();
-    const timer = window.setInterval(() => void check(), 30000);
-    return () => { alive = false; window.clearInterval(timer); };
-  }, []);
-  return <div className={`boundary-mini health-${status}`}><span className={`health-dot health-dot-${status}`} /> API readiness <span className="mini-value" title={status === 'unavailable' ? 'A free API service may be waking after idle; allow about one minute, then retry the failed request.' : undefined}>{status === 'ready' ? 'Ready' : status === 'checking' ? 'Checking' : 'Unavailable · may be waking (about 1 min)'}</span></div>;
+  const org = useOrganization();
+  const status = apiReadinessState(org.loading, org.error, org.profile !== null);
+  return <div className={`boundary-mini health-${status}`}><span className={`health-dot health-dot-${status}`} /> API connection <span className="mini-value" title={status === 'unavailable' ? 'The authenticated API profile request failed; retry after the free API wakes.' : undefined}>{status === 'ready' ? 'Connected' : status === 'checking' ? 'Checking' : 'Unavailable · may be waking (about 1 min)'}</span></div>;
 }
 function LoadingState({ label = 'Loading organization data…' }: { label?: string }) { return <div className="loading-state"><CircleNotch className="spin" size={19} />{label}</div>; }
 function ErrorState({ message, onRetry, retryLabel = 'Retry' }: { message: string; onRetry?: () => void; retryLabel?: string }) { return <div className="error-state"><span>Request failed</span><p>{message}</p>{onRetry && <button className="button button-outline" type="button" onClick={onRetry}>{retryLabel}</button>}</div>; }
