@@ -1,27 +1,34 @@
-# Mandate frontend/API hackathon demo (truthful scope)
+# Mandate — live judge demonstration
 
-**Current state:** local candidate only; no public service exists. Publication, remote database migration, and free-service creation require separate review/approval. Do not present this runbook as an executed demo. Budget target: ₹0, using only explicitly Free Render, Neon, and Auth0 settings in `DEPLOYMENT_RENDER_FREE.md`.
+**Current state (11 October 2026):** The React frontend and API are deployed on Render. Neon has migrations 001–026 applied. API readiness is HTTP 200. Auth0 sign-in reached the live console, and a signed-in owner created the `Mandate Jury Demo` organization. Agent/account/policy and Monad testnet execution remain separate checks; the required Safe, Guard, and Module addresses are pending.
 
-## Operator setup after the release gate
+## Live URLs
 
-1. Review the current `FAST_TRACK_RELEASE_REPORT.md` and exact revised publication manifest/diff. The owner selected MIT, but must still approve the revised projection and separately authorize any Git push; rerun the dedicated scan if files change.
-2. In existing/new operator-controlled provider dashboards, select only Free plans, default hostnames and no payment method. Configure the API, frontend, Neon database, and Auth0 SPA/API exactly as in `DEPLOYMENT_RENDER_FREE.md`. Store `DATABASE_URL` and `MANDATE_RATE_LIMIT_HMAC_KEY` only in secret fields. Never put credentials in `VITE_*` values, Git, or screenshots.
-3. Separately approve migrations on a dedicated empty Neon database only after a hostname-verified TLS connection check. Require API `/health/ready` to return `200` before judges use the site. Wake a sleeping Render Free API before the timed demo.
-4. Keep `MANDATE_EVM_RPC_URLS`, chain execution, worker/indexer submission, and trusted-hash configuration disabled until the deployed Safe Guard/module installation and agent enrollment are independently verified. Do not use a fabricated ACTIVE account or receipt.
+- Frontend: https://mandate-console-live.onrender.com/
+- API readiness: https://mandate-live.onrender.com/health/ready
+- API contract: https://mandate-live.onrender.com/api/v1/openapi.json
 
-## Five-minute judge path (only after live verification)
+## What Mandate is built to do
 
-1. Open the actual deployed HTTPS frontend URL; show the real API `/health/ready` response. A cold-start wait is normal on a sleeping Free service; do not mask an error as success.
-2. Sign in through the configured Auth0 Authorization Code + PKCE flow. Demonstrate that unauthenticated API access is denied and the signed-in user sees their actual organization membership.
-3. Create an organization through the authenticated API/UI. Confirm the creator receives the Mandate OWNER role; this is application membership, not an Auth0 Organization claim.
-4. Register a genuine agent public address and a genuine smart-account address; show the new account as `PROVISIONING`. Create a complete policy draft, show the canonical revision/hash returned by the API, and show validation errors if references are wrong.
-5. Explain and demonstrate the status boundary: a draft and an activation plan are not active enforcement. A `PROVISIONING` account cannot simulate/execute. If the chain remains uninstalled, show the blocked state rather than an ALLOW/receipt claim.
-6. If two real organizations are available, use separate authorized identities to demonstrate the tenant boundary: one cannot list or mutate the other's accounts, policies, activation plans, or receipts. Do not expose another user's data in a screenshot.
-7. Show read-only Monad evidence only: Safe version/owner/threshold, Guard and Module code/constructor bindings, and the current missing installation state from `MONAD_READ_ONLY_ATTESTATION.md`. Label it “deployed bytecode verified; enforcement not installed.”
+An agent proposes an exact action. Mandate checks the caller identity, organization membership, smart account, immutable policy revision, recipient, amount, target and expiry. A blocked action stops; an approval-required action waits for a distinct human decision. An authorized action still needs the agent-signed Safe-module transaction. Submission and final receipt reconciliation are separate evidence states, not a label added to a draft.
 
-## Acceptance and stop conditions
+## Verified live behavior
 
-- The frontend must call the real HTTPS API origin; CORS must allow exactly the frontend origin. Login callback/logout URLs and issuer/audience/JWKS must match the dashboard values. No test bypasses or static success data are acceptable.
-- The database must remain authoritative, isolated by organization, and reached with CA-chain plus hostname verification. A `503` readiness response, failed login, mismatched tenant result, or unavailable database means pause the demo and show the actual error.
-- No on-chain transaction, Safe operation, or wallet signature is part of this frontend/API snapshot. The owner-controlled on-chain path needs separate explicit authorization and full configuration/receipt verification.
-- Free quotas, account eligibility, sleeping services, and an unapproved revised release projection may prevent publication or availability. Never choose a paid alternative silently.
+1. The public React landing page and nested `/app/overview` route return HTTP 200 from the Render static site. The nested route uses an SPA rewrite to `/index.html`.
+2. The API returns HTTP 200 from `/health/ready` with `postgres: ready` after the checksum-checked migrations. Its unauthenticated `/api/v1/me` response is HTTP 401.
+3. The API permits preflight requests from exactly the Render frontend origin and denies an unrelated origin with HTTP 403.
+4. Auth0 login reaches the signed-in console. The live API accepted organization creation and returned owner membership; the overview, agent list, and account list loaded from that tenant. The console shows `API connection Connected` based on its authenticated, database-backed profile response.
+5. Backend and frontend builds and unit suites pass locally. See `VERIFICATION.txt` for commands and literal results.
+
+## Five-minute jury flow after signing in
+
+1. Open the frontend and show the live API readiness response.
+2. Sign in through Auth0 and show the existing `Mandate Jury Demo` owner membership in the live console.
+3. Register an agent identity. Show the returned one-time credential only to the trusted operator, not in a projected demo or screenshot.
+4. Register a genuine testnet Safe address. Show the account as `PROVISIONING`, and explain that this record is not a claim of on-chain enforcement.
+5. Create an immutable draft policy referencing that agent and account. Show revision/hash and backend validation. A draft is not an active grant.
+6. Show the authorization path: exact intent → policy verdict → human decision if needed → signed transaction → reconciled receipt and audit trail. Execute the testnet portion only after the Safe Guard/Module installation and owner-controlled transactions are verified.
+
+## Monad testnet qualification
+
+The deployed Guard, Agent Module and Safe must be inspected at their actual addresses. Check chain ID, Safe version/owners/threshold, both guard slots, enabled module, module-to-Safe/Guard bindings, agent key state, and runtime bytecode hashes. Then use owner-signed Safe operations to install/activate and verify final receipts before claiming an active on-chain policy or ALLOW execution. The current Render API has no chain RPC or trusted code-hash configuration, so its live judge path currently proves the off-chain control plane and the non-active boundary.
