@@ -1,59 +1,102 @@
-# Mandate-live
+# Mandate
 
-Mandate is an authorization control plane for software agents. It combines a React console, an OIDC-authenticated TypeScript API, and PostgreSQL-backed policy, approval, and execution records. The policy engine is deterministic; the configured account/tool adapter is the execution boundary. Mandate does not custody an owner wallet key.
+**Policy-based authorization for software agents.** Mandate gives teams a place to define what an agent may do, require human approval for sensitive actions, and trace each decision back to a policy and an execution record.
 
-**Demo status:** this repository is application source, not a live service. A green policy simulation or off-chain `ALLOW` is not proof of on-chain execution. The latest Monad Testnet review found the Safe module disabled and the Safe guard not installed, so the current Monad execution path is not ready. No contract deployment or activation is performed by this repository setup.
+An agent should not receive broad access just because it can call a tool. Mandate separates an agent's proposed action from permission to execute it: the action is checked against an organization-scoped policy, and only an authorized execution path can carry it out.
 
-**Publication status:** this source snapshot is not published. The owner confirmed redistribution authority and selected MIT; the rights-unverified favicon is excluded, and the exact revised manifest received a dedicated reviewed secret scan. Publication remains on hold until the owner approves this revised projection and authorizes the separate Git push. Do not treat this directory as a deployed service.
+## What it does
 
-## Components
+- **Register agents and accounts** within an organization, with membership and role checks on every protected API workflow.
+- **Create versioned policies** that constrain actions, recipients, amounts, and approval requirements.
+- **Simulate an action** before execution to see whether the current policy would allow, deny, or hold it for approval.
+- **Review approvals and activity** in the console, including the policy revision and available execution evidence.
+- **Reconcile uncertain outcomes** instead of assuming a submitted transaction succeeded or retrying it blindly.
 
-- `frontend/`: React, TypeScript, Vite console and public site with OIDC authorization-code + PKCE.
-- `backend/apps/api/`: REST API with OIDC/JWT authentication, organization membership checks, policy and action workflows.
-- `backend/apps/worker/`: durable outbox, invitation delivery, webhook delivery, and receipt reconciliation jobs.
-- `backend/apps/chain-indexer/`: optional finalized-chain event indexer used by chain reconciliation tests; it is not required for the selected onboarding/policy-draft demo.
-- `backend/packages/`: domain, policy, application, ports, PostgreSQL/EVM adapters, SDK, CLI, and observability.
-- `backend/migrations/`: ordered, checksum-verified PostgreSQL migrations 001–026.
+## How it works
 
-PostgreSQL is the authoritative store for off-chain organizations, agents, policies, grants, execution records, and reconciliation. Human sign-in is external OIDC; authorization roles are checked against organization membership in the database.
+```text
+Human operator ──OIDC──> React console
+                           │
+                           ▼
+                     TypeScript API ──> PostgreSQL
+                           │             organizations, agents, policies,
+                           │             approvals, attempts, receipts
+                           ▼
+                  Policy + application services
+                           │
+                 allow / deny / require approval
+                           │
+                           ▼
+                Verified execution adapter
+                           │
+                 Worker / chain indexer reconcile results
+```
 
-## ₹0 hosting and PostgreSQL TLS readiness
+The API authenticates people through an external OIDC provider and checks their organization membership and role. PostgreSQL is authoritative for off-chain state. Policy evaluation uses versioned, deterministic rules; it is not delegated to an LLM. An `ALLOW` decision is permission to proceed through the configured adapter, **not** proof that an external action or blockchain transaction occurred. Submission attempts, receipts, and reconciliation are tracked separately.
 
-The reviewed target is a Render Static Site + Render Free API Web Service + Neon Free PostgreSQL + Auth0 Free using the default tenant domain. No paid service, payment method, cloud resource, remote migration, or deployment is part of this candidate. Exact dashboard values, limits, OIDC setup, migration gate, and cleanup instructions are in [`DEPLOYMENT_RENDER_FREE.md`](./DEPLOYMENT_RENDER_FREE.md).
+Mandate follows a **modular-monolith** design: the API, worker, and chain indexer are separate entry points built from shared domain and application packages. The browser never holds server credentials, and Mandate does not custody an owner's wallet private key.
 
-Production PostgreSQL requires verified TLS. The adapter pins certificate validation on, uses Node trusted roots or a provider-supplied trusted CA, and rejects SSL query settings in `DATABASE_URL` that could override TLS options. Render Postgres is not selected: its internal self-signed TLS does not support `verify-full`, while external `verify-full` requires a Render CA bundle not available for a controlled connection test here. Neon documents `verify-full`; a live TLS test is still required before use. Never use TLS without certificate/hostname verification.
+## Repository layout
 
-The candidate has no `render.yaml`; use the reviewed manual dashboard configuration and explicitly select Free at each service confirmation.
+| Path | Purpose |
+| --- | --- |
+| [`frontend/`](./frontend/) | React/TypeScript console, public pages, OIDC sign-in, policies, approvals, and activity. |
+| [`backend/apps/api/`](./backend/apps/api/) | Authenticated REST API and health endpoints. |
+| [`backend/apps/worker/`](./backend/apps/worker/) | Durable outbox, delivery, and receipt-reconciliation jobs. |
+| [`backend/apps/chain-indexer/`](./backend/apps/chain-indexer/) | Finalized-chain event indexing for the chain integration path. |
+| [`backend/packages/`](./backend/packages/) | Domain, policy, application, adapter, SDK, CLI, and observability code. |
+| [`backend/contracts/`](./backend/contracts/) | Mandate Safe Guard and Agent Module Solidity sources. |
+| [`backend/migrations/`](./backend/migrations/) | Ordered PostgreSQL schema migrations. |
 
-## OIDC prerequisites
+## Run locally
 
-Choose and configure an OIDC provider before enabling sign-in. It must provide an HTTPS issuer, reachable JWKS URL, and access tokens with an audience accepted by the API. Register the exact callback and logout URLs above. The API validates issuer, audience, expiry, and signing keys; the application then enforces tenant membership and OWNER/ADMIN roles. No test identity provider or role bypass is included in this release snapshot.
+**Prerequisites:** Node.js 22+, npm, PostgreSQL 17, and an OIDC provider/client for authenticated workflows. Use a dedicated local database; do not point development or tests at a production database.
 
-## Local verification
+1. Install dependencies in each package:
 
-Requirements: Node.js 22+, npm, and a separately provisioned disposable PostgreSQL 17 database for database-backed tests. Do not use a production or shared database for test runs.
+   ```sh
+   cd backend && npm ci
+   cd ../frontend && npm ci
+   ```
+
+2. Configure the backend from [`backend/.env.example`](./backend/.env.example). The API requires `DATABASE_URL`, `MANDATE_JWT_ISSUER`, `MANDATE_JWT_JWKS_URL`, and `MANDATE_JWT_AUDIENCE`. Configure the same issuer and API audience in your OIDC provider. Keep credentials in local environment configuration, not in Git. For database migrations, `DATABASE_URL` must be exported in the migration process environment.
+
+3. Configure the frontend from [`frontend/.env.example`](./frontend/.env.example) with `VITE_OIDC_AUTHORITY`, `VITE_OIDC_CLIENT_ID`, and `VITE_OIDC_AUDIENCE`. These are public browser settings, not secrets. The Vite development server proxies `/api` and `/health` to `http://127.0.0.1:3000` by default.
+
+4. On the dedicated database, apply migrations, then start the API and frontend in separate terminals:
+
+   ```sh
+   # From backend/, with DATABASE_URL exported
+   npm run db:migrate
+   npm run dev:api
+   ```
+
+   ```sh
+   # From frontend/
+   npm run dev
+   ```
+
+Open the URL printed by Vite. The API exposes `/health/live`, `/health/ready` (including database readiness), and `/api/v1/openapi.json`. Sign-in and organization workflows require a correctly configured OIDC client; there is no default user or authentication bypass.
+
+## Validate changes
+
+Run these commands from **each** of `backend/` and `frontend/`:
 
 ```sh
-cd backend
-npm ci
-npm run typecheck
-npm test -- --reporter=dot
-npm run build
-npm run lint
-cd ../frontend
-npm ci
 npm run typecheck
 npm test -- --reporter=dot
 npm run build
 npm run lint
 ```
 
-Database integration tests require an explicitly isolated test database. Safe/Anvil tests need the project-pinned local test tooling; they do not establish Monad compatibility or authorize real transactions. No local Compose credentials or seeded identity-provider users are part of this public repository.
+Database integration tests need a separate disposable test database. Contract integration tests use local Anvil tooling and do not establish live-network readiness.
 
-## Known limitations
+## Deployment and chain integration
 
-- A production OIDC tenant/client and callback registration must be supplied by the operator.
-- A dedicated managed PostgreSQL database must be provisioned with certificate- and hostname-verified TLS before any approved remote migration. Neon Free has a limited restore window, not a full backup guarantee; decide and test a recovery approach before relying on it for durable demo data.
-- No Render service, DNS, database, or cloud resource is created by publishing this repository.
-- Live Monad account execution remains blocked until the Safe's module and guard configuration are verified and enabled through the established owner-controlled flow.
-- Local tests, successful builds, and static configuration checks are not production qualification.
+The frontend and API can be hosted separately with an HTTPS OIDC provider and a PostgreSQL connection that verifies the server certificate and hostname. See [`DEPLOYMENT_RENDER_FREE.md`](./DEPLOYMENT_RENDER_FREE.md) for the current deployment procedure and environment variables.
+
+The Solidity Guard/Module path is **not enabled by simply running this app**. Live on-chain execution requires independently verified contract identity, Safe Guard installation, Module enablement, agent enrollment, and receipt/finality reconciliation. A policy simulation or draft is useful without that path, but must not be presented as an executed transaction.
+
+## License
+
+Mandate-owned source is published under [MIT](./LICENSE). Third-party components retain their own terms; see [third-party notices](./THIRD_PARTY_NOTICES.md).
