@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: Mandate-live
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+    buildCommand: npm ci --include=dev --prefix backend && npm ci --include=dev --prefix frontend && npm run build --prefix frontend && npm run build --prefix backend
+    startCommand: node --import ./backend/dist/packages/observability/src/register.js ./backend/dist/apps/api/src/server.js
+    healthCheckPath: /health/ready
+    envVars:
+      - key: NODE_VERSION
+        value: 24.21.0
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: MANDATE_CONSOLE_DIST_DIR
+        value: frontend/dist
+      - key: MANDATE_CORS_ALLOWED_ORIGINS
+        value: https://mandate-live.onrender.com
+      - key: VITE_API_BASE_URL
+        value: ""
+      - key: VITE_OIDC_AUTHORITY
+        sync: false
+      - key: VITE_OIDC_CLIENT_ID
+        sync: false
+      - key: VITE_OIDC_AUDIENCE
+        sync: false
+      - key: VITE_OIDC_SCOPE
+        value: openid profile email

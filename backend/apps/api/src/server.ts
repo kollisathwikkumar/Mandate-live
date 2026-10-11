@@ -1,4 +1,6 @@
 import { Pool } from 'pg';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { createApiServer } from './app.js';
 import { AwsAuditExportKeyStore } from '../../../packages/adapters/src/aws/audit-export-key-store.js';
 import { AesGcmInvitationTokenCipher } from '../../../packages/adapters/src/crypto/aes-gcm-invitation-token-cipher.js';
@@ -135,7 +137,10 @@ const chainRpcFallbackUrls = parseBroadcastRpcFallbackUrls(process.env.MANDATE_B
 const trustedSafeSingletons = parseTrustedSafeSingletons(process.env.MANDATE_SAFE_SINGLETONS);
 const trustedRuntimeCodeHashes = parseTrustedRuntimeCodeHashes(process.env.MANDATE_TRUSTED_RUNTIME_CODE_HASHES);
 const chainConfirmations = parseChainConfirmations(process.env.MANDATE_CHAIN_CONFIRMATIONS);
-const app = await createApiServer({ pool, jwksUrl, issuer, audience, logger: true, chainRpcUrls, chainRpcFallbackUrls, trustedSafeSingletons, trustedRuntimeCodeHashes, chainConfirmations, ...(trustedProxyCidrs === undefined ? {} : { trustedProxyCidrs }), ...(corsAllowedOrigins === undefined ? {} : { corsAllowedOrigins }), ...(auditExportSigner === undefined ? {} : { auditExportSigner }), ...(invitationTokenCipher === undefined ? {} : { invitationTokenCipher }) });
+const consoleStaticDir = process.env.MANDATE_CONSOLE_DIST_DIR === undefined
+  ? [resolve(process.cwd(), 'frontend/dist'), resolve(process.cwd(), '../frontend/dist')].find(existsSync)
+  : resolve(process.cwd(), process.env.MANDATE_CONSOLE_DIST_DIR);
+const app = await createApiServer({ pool, jwksUrl, issuer, audience, logger: true, chainRpcUrls, chainRpcFallbackUrls, trustedSafeSingletons, trustedRuntimeCodeHashes, chainConfirmations, ...(consoleStaticDir === undefined ? {} : { consoleStaticDir }), ...(trustedProxyCidrs === undefined ? {} : { trustedProxyCidrs }), ...(corsAllowedOrigins === undefined ? {} : { corsAllowedOrigins }), ...(auditExportSigner === undefined ? {} : { auditExportSigner }), ...(invitationTokenCipher === undefined ? {} : { invitationTokenCipher }) });
 
 try {
   await app.listen({ host, port });

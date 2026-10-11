@@ -35,6 +35,7 @@
     "@aws-sdk/client-sesv2": "^3.1146.0",
     "@fastify/otel": "^0.21.1",
     "@fastify/proxy-addr": "5.1.1",
+    "@fastify/static": "^10.1.6",
     "@modelcontextprotocol/server": "^2.3.1",
     "@opentelemetry/exporter-metrics-otlp-http": "^0.222.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.222.0",

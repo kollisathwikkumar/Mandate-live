@@ -1,5 +1,6 @@
 import { createHash, createHmac, randomBytes, randomUUID } from 'node:crypto';
 import Fastify, { type FastifyError, type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
+import fastifyStatic from '@fastify/static';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import type { Pool } from 'pg';
 import { z } from 'zod';
@@ -102,6 +103,7 @@ export interface ApiServerConfig {
   readonly chainConfirmations?: Readonly<Record<number, number>>;
   readonly auditExportSigner?: AuditExportSigner;
   readonly invitationTokenCipher?: InvitationTokenCipher;
+  readonly consoleStaticDir?: string;
 }
 
 function sha256(value: string): string {
@@ -341,6 +343,10 @@ export async function createApiServer(config: ApiServerConfig): Promise<FastifyI
     bodyLimit: 300_000,
     trustProxy: config.trustedProxyCidrs === undefined ? false : [...config.trustedProxyCidrs],
   });
+
+  if (config.consoleStaticDir !== undefined) {
+    await app.register(fastifyStatic, { root: config.consoleStaticDir, wildcard: true, index: false });
+  }
   const rateLimitStore = new PostgresRateLimitStore(config.pool);
   app.decorateRequest('principal', null);
 
@@ -445,16 +451,26 @@ export async function createApiServer(config: ApiServerConfig): Promise<FastifyI
       : reply.code(500).send(errorBody('INTERNAL_ERROR', 'The request could not be completed', request.id));
   });
 
-  app.setNotFoundHandler((request, reply) => reply.code(404).send(errorBody('RESOURCE_NOT_FOUND', 'The requested route was not found', request.id)));
+  app.setNotFoundHandler((request, reply) => {
+    const path = request.url.split('?', 1)[0] ?? request.url;
+    const isApiRoute = path.startsWith('/api/') || path.startsWith('/health/') || path.startsWith('/auth/') || path.startsWith('/mcp');
+    if (config.consoleStaticDir !== undefined && !isApiRoute && request.method === 'GET') {
+      return reply.code(200).type('text/html').sendFile('index.html');
+    }
+    return reply.code(404).send(errorBody('RESOURCE_NOT_FOUND', 'The requested route was not found', request.id));
+  });
 
-  app.get('/', async (_request, reply) => reply.code(200).send({
-    service: 'Mandate API',
-    links: {
-      live: '/health/live',
-      readiness: '/health/ready',
-      openapi: '/api/v1/openapi.json',
-    },
-  }));
+  app.get('/', async (_request, reply) => {
+    if (config.consoleStaticDir !== undefined) return reply.type('text/html').sendFile('index.html');
+    return reply.code(200).send({
+      service: 'Mandate API',
+      links: {
+        live: '/health/live',
+        readiness: '/health/ready',
+        openapi: '/api/v1/openapi.json',
+      },
+    });
+  });
 
   app.get('/health/live', async (_request, reply) => reply.code(200).send({ status: 'live' }));
   app.get('/health/ready', async (request, reply) => {

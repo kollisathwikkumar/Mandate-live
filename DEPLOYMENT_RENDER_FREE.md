@@ -1,15 +1,14 @@
 # Mandate demo deployment — Render Free only (₹0)
 
-**State:** instructions only. No account, resource, remote deployment, production migration, or publication has been created or performed. Checked against official provider documents on 2026-10-11. Select only offers explicitly labeled **Free**; do not add a payment method, attach a custom domain, or upgrade a plan. **Publication remains blocked pending explicit owner approval of the revised manifest/diff and separate push authorization; the selected MIT license and reviewed dedicated scan do not themselves authorize publication.** This runbook is not authorization to publish, create provider resources, or migrate a remote database.
+**State (11 October 2026):** the existing `Mandate-live` Render Web Service and `kollisathwikkumar/Mandate-live` GitHub repository are the production demo target. Its root-level deployment now serves the React console and API from one service. Neon already contains migrations 001–026; the demo uses an Auth0 SPA client. This runbook records the current single-service topology; it does not request new services or a new database migration.
 
 ## Recommendation and hard constraints
 
 Use:
 
-1. **Render Static Site** for `frontend/`.
-2. **Render Free Web Service** for the API in `backend/`.
-3. **Neon Free PostgreSQL** as the API's database, with certificate-chain and hostname verification.
-4. **Auth0 Free** using its default tenant domain and a public SPA client.
+1. **One existing Render Free Web Service** (`Mandate-live`) builds and hosts both `frontend/` and `backend/`.
+2. **Neon PostgreSQL** remains the API database, with certificate-chain and hostname verification.
+3. **Auth0** uses its default tenant domain and a public SPA client.
 
 Do not use Render Free Postgres for this candidate's verified-TLS requirement. Render's primary database docs say internal DB TLS uses self-signed certificates that cannot use `verify-ca` or `verify-full`. The external connection uses Render-managed TLS and requires TLS, but the primary docs do not provide the verified CA setup. A Render tutorial says external `verify-full` is possible if a Render CA bundle is shipped; no bundle source or endpoint is available here to test. Therefore neither Render connection route is approved for this app's strict verified-TLS requirement. Do not use `sslmode=require` alone as verification.
 
@@ -19,50 +18,31 @@ Render Free is appropriate only for a temporary demo, not durable production: Fr
 
 Auth0 Free currently lists 25,000 MAU and five Organizations. Signup does not require a card; a custom Auth0 domain does require card verification, so use the default `*.auth0.com` tenant domain. Auth0's Free pricing page says Free activates after the 22-day trial. Do not choose any paid feature or add a card. See [Auth0 pricing](https://auth0.com/pricing) and [custom-domain requirements](https://support.auth0.com/center/s/article/Using-Custom-Domains-with-Free-Tenants).
 
-## Render dashboard configuration
+## Single-service Render deployment
 
-The current candidate has no `render.yaml` or Dockerfile. Use dashboard settings so every selected plan is visible and explicitly **Free**. Do not enable paid pre-deploy jobs or add-ons.
+Keep the API and React console in the existing **Mandate-live Node Web Service**. Do not create or use a separate Static Site for this deployment. The API serves `frontend/dist` from the same HTTPS origin, while `/api/v1/*` and `/health/*` remain API routes. Render can build this monorepo from its repository root; an empty Root Directory is required so the build sees both packages.
 
-### A. API Web Service
+Use the existing service `Mandate-live` (repo `kollisathwikkumar/Mandate-live`, branch `main`, Free plan, Singapore region):
 
-- Repository: the reviewed/published candidate repository only. It is not published from this task.
-- Root Directory: `backend`
-- Runtime: Node
-- Node version: set `NODE_VERSION=24.21.0` in the service environment (Render's current default; pin it explicitly).
-- Plan: **Free** (`free`, 0.1 CPU / 512 MB)
-- Build Command: `npm ci --include=dev && npm run build`
-- Start Command: `node --import ./dist/packages/observability/src/register.js ./dist/apps/api/src/server.js`
+- Root Directory: blank (repository root)
+- Build Command: `npm ci --include=dev --prefix backend && npm ci --include=dev --prefix frontend && npm run build --prefix frontend && npm run build --prefix backend`
+- Start Command: `node --import ./backend/dist/packages/observability/src/register.js ./backend/dist/apps/api/src/server.js`
 - Health Check Path: `/health/ready`
-- Region: Singapore, if available on the workspace; choose it before creation because Render does not support moving an existing service between regions.
-- No worker, indexer, MCP service, disk, private service, or paid database.
-- Render injects `PORT`; do not hard-code it. Set `HOST=0.0.0.0` and `NODE_ENV=production`.
+- Runtime: Node `24.21.0`; keep Render's injected `PORT`, and set `HOST=0.0.0.0`, `NODE_ENV=production`.
+- Set `MANDATE_CONSOLE_DIST_DIR=frontend/dist`.
+- Set `VITE_OIDC_AUTHORITY`, `VITE_OIDC_CLIENT_ID`, `VITE_OIDC_AUDIENCE`, and `VITE_OIDC_SCOPE` as build-time public values on this same service. Leave `VITE_API_BASE_URL` unset/empty so the console calls the API at its own origin.
+- Set `MANDATE_CORS_ALLOWED_ORIGINS=https://mandate-live.onrender.com` (the same-origin UI does not require CORS; this exact origin remains available for authorized browser tools).
 
-`/health/ready` checks PostgreSQL and requires migration `026_activation_operation_journal.sql`; it should return 503 until the approved migration is applied. `/health/live` is liveness only and is not the deployment readiness check.
-
-### B. Static Site
-
-- Root Directory: `frontend`
-- Build runtime: Node `24.21.0`
-- Build Command: `npm ci --include=dev && npm run build`
-- Publish Directory: `dist`
-- Add SPA fallback rewrite: `/*` → `/index.html` with status `200`.
-- Use the generated `onrender.com` URL; do not configure a paid/custom domain.
-- Add the `VITE_*` values below as build-time variables. They are public browser configuration, never secrets.
-
-### C. Direct browser-to-API connection (no proxy)
-
-The frontend API client accepts an HTTPS **origin only** and appends the `/api/...` path. Set `VITE_API_BASE_URL` to the exact API `https://<service>.onrender.com` origin (no trailing path/query). This uses browser CORS rather than a same-origin proxy and avoids an extra service or paid add-on. In the API service, set `MANDATE_CORS_ALLOWED_ORIGINS` to the exact static-site origin, e.g. `https://<site>.onrender.com` (no wildcard, no trailing slash). Auth uses bearer headers and redirects; it does not require cross-site cookies. The API must not reflect arbitrary origins.
-
-Create the API first to learn its service hostname, then the static site to learn its hostname; configure the exact CORS origin and rebuild the static site with its API origin. Both services serve HTTPS. A first API request after idle can take about a minute; the UI reports API readiness and ordinary failed requests show errors/retry controls. Before judging, visit `https://<api-host>.onrender.com/health/ready`, wait for `200`, then sign in and start the demo. Render may sleep it again after 15 minutes without inbound traffic.
+`render.yaml` records the one-service topology and reproducible root-level build/start commands. Existing Render secret variables remain configured in the service dashboard; do not copy secret values into that manifest. `/health/ready` checks PostgreSQL and requires migration `026_activation_operation_journal.sql`; it should return 503 until the schema is current. `/health/live` is liveness only. The Free Web Service sleeps after 15 minutes without traffic, so warm `/health/ready` before the judge demonstration.
 
 ## Auth0 OIDC dashboard setup
 
 Do this manually in the Auth0 Free dashboard. Do not create a client secret for the SPA and never put one in frontend configuration.
 
 1. Create a **Single Page Application**.
-2. Add the exact callback URL `https://<static-site-host>.onrender.com/login/callback` to **Allowed Callback URLs**.
-3. Add `https://<static-site-host>.onrender.com/` to **Allowed Logout URLs**.
-4. Add `https://<static-site-host>.onrender.com` to **Allowed Web Origins**.
+2. Add the exact callback URL `https://mandate-live.onrender.com/login/callback` to **Allowed Callback URLs**.
+3. Add `https://mandate-live.onrender.com/` to **Allowed Logout URLs**.
+4. Add `https://mandate-live.onrender.com` to **Allowed Web Origins**.
 5. Create an Auth0 API using a stable API Identifier you choose; select **RS256** signing. Use that exact identifier as the audience in both frontend and API settings.
 6. Keep Authorization Code with PKCE. The app uses `oidc-client-ts`, `response_type=code`, and the API audience in the authorization request. Issuer and callback URL matching are exact.
 7. Set:
@@ -92,7 +72,7 @@ Set API values in Render's service Environment page. Use its secret-entry field 
 | `MANDATE_JWT_JWKS_URL` | yes | HTTPS JWKS URL. |
 | `MANDATE_JWT_AUDIENCE` | yes | Exact OIDC API Identifier. |
 | `MANDATE_RATE_LIMIT_HMAC_KEY` | yes, secret | At least 32 UTF-8 bytes; generate locally and store only as a Render secret. |
-| `MANDATE_CORS_ALLOWED_ORIGINS` | yes | Exact deployed static-site origin only. |
+| `MANDATE_CORS_ALLOWED_ORIGINS` | yes | Same-origin UI host: `https://mandate-live.onrender.com`. |
 | `MANDATE_EVM_RPC_URLS` | not for initial off-chain demo | Keep unset until read-only chain setup and independently verified account configuration. It is a sensitive endpoint value if it contains a provider token. |
 | `MANDATE_SAFE_SINGLETONS`, `MANDATE_CHAIN_CONFIRMATIONS`, `MANDATE_INDEXER_START_BLOCKS`, `MANDATE_INDEXER_CONFIRMATIONS` | not for initial demo | Configure only after exact supported chain/Safe settings are reviewed. |
 | `MANDATE_BROADCAST_RPC_FALLBACK_URLS` | not for initial demo | Do not configure; no on-chain execution is enabled in this plan. |
@@ -139,10 +119,10 @@ On 2026-10-11, the resumed candidate-directory pass used Node `24.11.1`/npm `11.
 2. **Provider account checks:** use existing accounts if available. Do not add a payment method, activate paid plans, attach a custom domain, enable paid backups, or select a paid database/instance.
 3. **Neon:** create a Free project only after approval. Select Singapore/AWS ap-southeast-1 if offered to align with Render; confirm Free limits on the confirmation screen. Use the direct non-pooler endpoint. Before migrations, run a controlled Node `pg` connection test with the production adapter and `SELECT 1`; record success only if TLS is encrypted, CA chain validated, hostname checked, and the query succeeds. Store the URL only in the secret UI.
 4. **OIDC:** perform the Auth0 SPA/API steps above using the default tenant domain. Confirm a token is issued for the API audience and the API accepts issuer, audience, expiry, and JWKS signature. Assign an actual authenticated user as organization OWNER through the supported product flow; no bypass.
-5. **Render API:** create a Node Web Service with the `backend` root and exact commands above. Choose Free and Singapore if offered. Add backend environment variables. Do not add a payment method. Wait for first deployment; it will fail readiness until migrations are separately approved and completed.
-6. **Migration gate:** confirm the database is dedicated and empty, take an export/restore point where supported, review checksums, then get explicit operator approval. Run only the documented migration command. Check status; never reset or rerun against an uncertain schema.
-7. **Render frontend:** create a Static Site with the `frontend` root, exact build/publish settings above and SPA rewrite. Set Vite build values only after API and OIDC settings are known.
-8. **Connect:** set exact CORS origin on API; set frontend API base to API origin; configure Auth0 callbacks/logout/origin exactly. Redeploy after build-time Vite settings change.
+5. **Render service:** keep the existing `Mandate-live` Node Web Service. Set Root Directory to blank and use the single-service commands above; do not create a second Render service.
+6. **Database:** retain the already-verified Neon database and migration state; do not rerun migrations as part of a frontend/API packaging change.
+7. **Identity:** use the existing Auth0 SPA/API; set its callback, logout, and web-origin entries to `https://mandate-live.onrender.com`, then place the public Vite values on the existing `Mandate-live` service.
+8. **Connect:** leave `VITE_API_BASE_URL` empty for same-origin API calls, set exact CORS origin on the API, and redeploy `Mandate-live` after the root-level build settings change.
 9. **Smoke test:** verify `/health/live` and `/health/ready`; then sign in; create a workspace; verify OWNER role; create/list agents/accounts; confirm new accounts display PROVISIONING; create a policy draft; ensure non-ACTIVE account cannot simulate or execute; test a backend rule decision only against legitimate ACTIVE account/grant data if such verified state exists; test tenant switching does not show prior-tenant data; confirm API failures and cold-start delays are visible; confirm no transaction is sent.
 10. **Chain honesty:** only use read-only RPC checks. Re-verify Safe owner, Guard slots, installed module, module/guard bindings, and agent enrollment before making any claim of on-chain protection. This runbook does not authorize signatures or writes.
 11. **Budget checks:** before every provider confirmation, visually confirm the resource says **Free** and $0. Monitor Render included hours, build minutes, bandwidth; monitor Neon storage/CU-hours; monitor Auth0 MAU. If a quota is reached, stop/accept suspension—do not upgrade.

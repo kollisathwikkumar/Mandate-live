@@ -4,6 +4,8 @@
 
 An agent should not receive broad access just because it can call a tool. Mandate separates an agent's proposed action from permission to execute it: the action is checked against an organization-scoped policy, and only an authorized execution path can carry it out.
 
+**Live judge demo:** [mandate-live.onrender.com](https://mandate-live.onrender.com/) serves the React console and API from the existing single Render Web Service. Check [readiness](https://mandate-live.onrender.com/health/ready) and the [API contract](https://mandate-live.onrender.com/api/v1/openapi.json). Deployment settings are recorded in [DEPLOYMENT_RENDER_FREE.md](DEPLOYMENT_RENDER_FREE.md).
+
 ## What it does
 
 - **Register agents and accounts** within an organization, with membership and role checks on every protected API workflow.

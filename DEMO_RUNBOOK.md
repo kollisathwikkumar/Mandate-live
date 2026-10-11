@@ -1,10 +1,10 @@
 # Mandate — live judge demonstration
 
-**Current state (11 October 2026):** The React frontend and API are deployed on Render. Neon has migrations 001–026 applied. API readiness is HTTP 200. Auth0 sign-in reached the live console, and a signed-in owner created the `Mandate Jury Demo` organization. Agent/account/policy and Monad testnet execution remain separate checks; the required Safe, Guard, and Module addresses are pending.
+**Current state (11 October 2026):** The React frontend and API are served together by the existing `Mandate-live` Render Web Service. Neon has migrations 001–026 applied. API readiness is HTTP 200. Auth0 sign-in reached the live console, and a signed-in owner created the `Mandate Jury Demo` organization. Agent/account/policy and Monad testnet execution remain separate checks; the required Safe, Guard, and Module addresses are pending.
 
 ## Live URLs
 
-- Frontend: https://mandate-console-live.onrender.com/
+- Demo UI and API: https://mandate-live.onrender.com/
 - API readiness: https://mandate-live.onrender.com/health/ready
 - API contract: https://mandate-live.onrender.com/api/v1/openapi.json
 
@@ -14,7 +14,7 @@ An agent proposes an exact action. Mandate checks the caller identity, organizat
 
 ## Verified live behavior
 
-1. The public React landing page and nested `/app/overview` route return HTTP 200 from the Render static site. The nested route uses an SPA rewrite to `/index.html`.
+1. The public React landing page and nested `/app/overview` route return HTTP 200 from the `Mandate-live` Web Service. The nested route uses an SPA rewrite to `/index.html`.
 2. The API returns HTTP 200 from `/health/ready` with `postgres: ready` after the checksum-checked migrations. Its unauthenticated `/api/v1/me` response is HTTP 401.
 3. The API permits preflight requests from exactly the Render frontend origin and denies an unrelated origin with HTTP 403.
 4. Auth0 login reaches the signed-in console. The live API accepted organization creation and returned owner membership; the overview, agent list, and account list loaded from that tenant. The console shows `API connection Connected` based on its authenticated, database-backed profile response.
