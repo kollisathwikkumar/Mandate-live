@@ -63,3 +63,8 @@
 .magnetic-action{--magnetic-x:0px;--magnetic-y:0px;translate:var(--magnetic-x) var(--magnetic-y);transition:translate 180ms cubic-bezier(.23,1,.32,1),transform .24s cubic-bezier(.2,.75,.2,1),color .2s,border-color .2s,background .2s,box-shadow .24s}
 @media(hover:none),(pointer:coarse){.magnetic-action{translate:none}}
 @media(prefers-reduced-motion:reduce){.magnetic-action{translate:none!important;transition:none!important}}
+.nav-group>a{min-height:42px;height:42px;gap:12px;padding:0 11px;font-size:11px;letter-spacing:.01em}
+.nav-icon{width:20px;height:20px;display:inline-grid;place-items:center;flex:0 0 20px;color:var(--text-tertiary);transition:color .16s,transform .16s}
+.nav-group>a:hover .nav-icon{color:var(--text-primary);transform:translateX(1px)}
+.nav-group>a.active .nav-icon{color:var(--accent-highlight)}
+.nav-group>a:focus-visible{outline:2px solid var(--accent-highlight);outline-offset:2px}

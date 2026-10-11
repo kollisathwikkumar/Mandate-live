@@ -12,6 +12,7 @@ import { AccountListSchema, AccountResultSchema, ActionListSchema, ActionSchema,
 import type { ActionDetail, ActionList, AccountList, AgentList, Alerts, AuditEvents, HumanProfile, Invitations, Members, PolicyList, PolicyRevision, Providers, Receipts, WebhookDeliveries, Webhooks } from '../api/schemas';
 import { ROUTE_MANIFEST, matchRoute } from './routeManifest';
 import { getActivityDetailHref } from './activityLinks';
+import { APP_NAV } from './appNavigation';
 import { canSwitchOrganization } from './organizationPicker';
 import { buildAuthorizationPath, buildNextAction } from './authorizationPathModel';
 import { buildSystemHealthChecks } from './systemHealthModel';
@@ -340,11 +341,6 @@ function AuthGate({ children }: { children: ReactNode }) {
   return children;
 }
 
-const appNav: { readonly label: string; readonly links: readonly (readonly [string, string])[] }[] = [
-  { label: 'Workspace', links: [['Overview', '/app/overview'], ['Agents', '/app/agents'], ['Policies', '/app/policies'], ['Approvals', '/app/approvals'], ['Activity', '/app/activity']] },
-  { label: 'Configure', links: [['Team', '/app/settings/team'], ['Accounts', '/app/settings/accounts'], ['Integrations', '/app/settings/integrations'], ['System health', '/app/system-health']] },
-];
-
 function AppShell({ children }: { children: ReactNode }) {
   const mutate = useMutationTransport();
   const { user, signOut, error: authError } = useAuth();
@@ -375,7 +371,7 @@ function AppShell({ children }: { children: ReactNode }) {
   }
   return <div className="console-shell">
     <aside className={`console-sidebar ${mobileNav ? 'sidebar-open' : ''}`}><div className="sidebar-brand"><Brand small /><button className="icon-button mobile-close" aria-label="Close navigation" onClick={() => setMobileNav(false)}><X /></button></div><button className="org-picker" disabled={!canSwitch} aria-haspopup={canSwitch ? 'menu' : undefined} aria-expanded={canSwitch ? orgMenuOpen : undefined} aria-label={canSwitch ? `Switch organization; current ${org.organizationId ?? 'workspace'}` : `Organization ${org.organizationId ?? 'not selected'}`} onClick={() => { if (canSwitch) setOrgMenuOpen((open) => !open); }}><span className="org-avatar">{org.organizationId?.slice(0, 1).toUpperCase() ?? 'M'}</span><span><strong>{org.organizationId ?? 'No workspace'}</strong><small>{org.role ?? 'Organization'}</small></span>{canSwitch && <span className="chevron">⌄</span>}</button>{canSwitch && <div className={`org-menu ${orgMenuOpen ? 'visible' : ''}`} id="org-menu" role="menu">{org.memberships.map((item) => <button role="menuitem" key={item.organizationId} onClick={() => { org.choose(item.organizationId); setOrgMenuOpen(false); }}>{item.organizationId}<small>{item.role}</small></button>)}</div>}
-      <div className="sidebar-nav">{appNav.map((group) => <div className="nav-group" key={group.label}><span>{group.label}</span>{group.links.map(([label, href]) => <Link key={href} to={href} onClick={() => setMobileNav(false)} className={location.pathname === href || (href === '/app/policies' && location.pathname.startsWith('/app/policies/')) || (href === '/app/activity' && location.pathname.startsWith('/app/activity/')) ? 'active' : ''}><span className="nav-bullet" />{label}{label === 'Approvals' && <span className="nav-dot" />}</Link>)}</div>)}</div>
+      <div className="sidebar-nav">{APP_NAV.map((group) => <div className="nav-group" key={group.label}><span>{group.label}</span>{group.links.map(({ label, href, icon }) => <Link key={href} to={href} onClick={() => setMobileNav(false)} className={location.pathname === href || (href === '/app/policies' && location.pathname.startsWith('/app/policies/')) || (href === '/app/activity' && location.pathname.startsWith('/app/activity/')) ? 'active' : ''}><span className="nav-icon" aria-hidden="true">{icon}</span>{label}{label === 'Approvals' && <span className="nav-dot" />}</Link>)}</div>)}</div>
       <div className="sidebar-bottom"><BackendHealthBadge /><div className="user-mini"><div className="user-avatar">{user?.profile.email?.toString().slice(0, 1).toUpperCase() ?? 'U'}</div><span><strong>{user?.profile.email?.toString() ?? 'Signed in'}</strong><small>{user?.profile.name?.toString() ?? 'Organization member'}</small></span><button aria-label="Sign out" className="icon-button" onClick={() => void signOut()}><SignOut size={17} /></button></div></div>
     </aside>
     {mobileNav && <button className="mobile-backdrop" aria-label="Close navigation" onClick={() => setMobileNav(false)} />}
