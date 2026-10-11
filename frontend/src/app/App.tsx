@@ -13,7 +13,8 @@ import type { ActionDetail, ActionList, AccountList, AgentList, Alerts, AuditEve
 import { ROUTE_MANIFEST, matchRoute } from './routeManifest';
 import { getActivityDetailHref } from './activityLinks';
 import { canSwitchOrganization } from './organizationPicker';
-import { buildAuthorizationPath } from './authorizationPathModel';
+import { buildAuthorizationPath, buildNextAction } from './authorizationPathModel';
+import { buildSystemHealthChecks } from './systemHealthModel';
 import { buildOverviewMetrics } from './overviewMetrics';
 import { apiReadinessState } from './apiReadinessState';
 import { getPolicyEditorState } from './policyEditorState';
@@ -341,7 +342,7 @@ function AuthGate({ children }: { children: ReactNode }) {
 
 const appNav: { readonly label: string; readonly links: readonly (readonly [string, string])[] }[] = [
   { label: 'Workspace', links: [['Overview', '/app/overview'], ['Agents', '/app/agents'], ['Policies', '/app/policies'], ['Approvals', '/app/approvals'], ['Activity', '/app/activity']] },
-  { label: 'Configure', links: [['Team', '/app/settings/team'], ['Accounts', '/app/settings/accounts'], ['Integrations', '/app/settings/integrations']] },
+  { label: 'Configure', links: [['Team', '/app/settings/team'], ['Accounts', '/app/settings/accounts'], ['Integrations', '/app/settings/integrations'], ['System health', '/app/system-health']] },
 ];
 
 function AppShell({ children }: { children: ReactNode }) {
@@ -392,6 +393,38 @@ function BackendHealthBadge() {
   const status = apiReadinessState(org.loading, org.error, org.profile !== null);
   return <div className={`boundary-mini health-${status}`}><span className={`health-dot health-dot-${status}`} /> API connection <span className="mini-value" title={status === 'unavailable' ? 'The authenticated API profile request failed; retry after the free API wakes.' : undefined}>{status === 'ready' ? 'Connected' : status === 'checking' ? 'Checking' : 'Unavailable · may be waking (about 1 min)'}</span></div>;
 }
+
+const ReadinessSchema = z.object({
+  status: z.enum(['ready', 'not_ready']),
+  dependencies: z.object({ postgres: z.enum(['ready', 'unavailable', 'schema_not_current']) }),
+});
+
+function SystemHealthPage() {
+  const org = useOrganization();
+  const [refresh, setRefresh] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [readiness, setReadiness] = useState<z.infer<typeof ReadinessSchema> | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true); setReadiness(null); setError(null);
+    void apiFetch('/health/ready', { headers: { Accept: 'application/json' }, signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok && response.status !== 503) throw new Error(`Readiness endpoint returned HTTP ${response.status}.`);
+        const parsed = ReadinessSchema.safeParse(await response.json());
+        if (!parsed.success) throw new Error('Readiness response did not match the documented API contract.');
+        if (!controller.signal.aborted) setReadiness(parsed.data);
+      })
+      .catch((failure: unknown) => {
+        if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : 'Readiness check failed.');
+      })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [refresh]);
+  const checks = buildSystemHealthChecks({ readiness, loading, error, authenticatedProfile: org.profile !== null });
+  return <><PageHeader eyebrow="Operations / readiness" title="System health" description="Live checks from supported endpoints. Unknown means this API does not report enough evidence; it is not a green status." action={<button className="button button-outline" type="button" onClick={() => setRefresh((value) => value + 1)} disabled={loading}>Refresh checks</button>} /><section className="health-check-grid" aria-label="System health checks">{checks.map((check) => <article className="panel health-check-card" key={check.name}><div className="panel-heading"><h2>{check.name}</h2><StatusPill value={check.state.toUpperCase()} /></div><p>{check.detail}</p></article>)}</section><p className="form-hint">Readiness reports API process/database schema availability only. It does not establish wallet connectivity, testnet RPC readiness, account protection, transaction execution, or receipt finality.</p></>;
+}
+
 function LoadingState({ label = 'Loading organization data…' }: { label?: string }) { return <div className="loading-state"><CircleNotch className="spin" size={19} />{label}</div>; }
 function ErrorState({ message, onRetry, retryLabel = 'Retry' }: { message: string; onRetry?: () => void; retryLabel?: string }) { return <div className="error-state"><span>Request failed</span><p>{message}</p>{onRetry && <button className="button button-outline" type="button" onClick={onRetry}>{retryLabel}</button>}</div>; }
 function EmptyState({ title, body, action }: { title: string; body: string; action?: ReactNode }) { return <div className="empty-state"><div className="section-icon"><Sparkle size={21} /></div><h3>{title}</h3><p>{body}</p>{action}</div>; }
@@ -410,14 +443,21 @@ function AppOverviewPage() {
     agents: agents.data?.agents ?? [],
     policies: policies.data?.policies ?? [],
     accounts: accounts.data?.accounts ?? [],
+    heldActions: held.data?.actions ?? [],
     receipts: receipts.data?.receipts ?? [],
   });
-  const pathLoading = agents.loading || policies.loading || accounts.loading || receipts.loading;
+  const nextAction = buildNextAction({
+    agents: agents.data?.agents ?? [], policies: policies.data?.policies ?? [],
+    accounts: accounts.data?.accounts ?? [], heldActions: held.data?.actions ?? [],
+    receipts: receipts.data?.receipts ?? [],
+  });
+  const pathLoading = agents.loading || policies.loading || accounts.loading || held.loading || receipts.loading;
   const metrics = buildOverviewMetrics({ agents, policies, receipts, alerts });
   return <div className="overview-content"><PageHeader eyebrow="Control plane / overview" title="Overview" description="A live view of registered agents, policy state, and recent execution evidence." action={<Link to="/app/policies/new" className="button button-primary"><Plus size={16} /> New policy</Link>} />
     <Reveal className="metric-grid">{metrics.map((metric) => <Link to={metric.href} className="metric-card" key={metric.label}><span>{metric.label}</span><strong className={metric.value === 'Unavailable' ? 'metric-value-unavailable' : undefined}>{metric.value}</strong><small>{metric.note}</small></Link>)}</Reveal>
     {agents.error && <ErrorState message={agents.error} />}{policies.error && <ErrorState message={policies.error} />}{accounts.error && <ErrorState message={accounts.error} />}
-    <Reveal className="panel authorization-path-panel"><div className="panel-heading"><div><p className="eyebrow">Live authorization path</p><h2>Identity → policy → account → evidence</h2></div><Link to="/app/activity" className="text-link">Review evidence <ArrowRight size={15} /></Link></div><p className="authorization-path-intro">Workspace state from the API. Green indicates a prerequisite exists—not that any action is approved. Each action still needs an exact policy match, required approvals, a reservation, and enforcement at the execution boundary.</p>{pathLoading ? <LoadingState label="Loading authorization path…" /> : accounts.error || agents.error || policies.error || receipts.error ? <ErrorState message="Some live path data is unavailable; counts are not shown as zero." /> : <div className="authorization-path" aria-label="Authorization prerequisites and evidence">{authorizationPath.map((step) => <Link key={step.key} to={step.href} className={`authorization-step authorization-${step.status}`}><span className="authorization-step-index">{step.index} / {step.key}</span><span className="authorization-step-status"><i />{step.statusLabel}</span><strong>{step.count}</strong><span className="authorization-step-title">{step.title}</span><span className="authorization-step-note">{step.note}</span><span className="authorization-step-link">Open section <ArrowUpRight size={13} /></span></Link>)}</div>}</Reveal>
+    <Reveal className="panel authorization-path-panel"><div className="panel-heading"><div><p className="eyebrow">Live authorization path</p><h2>Identity → policy → account → approval → enforcement → receipt</h2></div><Link to="/app/activity" className="text-link">Review evidence <ArrowRight size={15} /></Link></div><p className="authorization-path-intro">Workspace state from the API. A registered identity, active policy, or verified account record is only a prerequisite—not proof that any action is approved or protected on-chain. Enforcement remains explicitly unverified until backend chain-state evidence is available.</p>{pathLoading ? <LoadingState label="Loading authorization path…" /> : accounts.error || agents.error || policies.error || held.error || receipts.error ? <ErrorState message="Some live path data is unavailable; counts are not shown as zero." /> : <div className="authorization-path" aria-label="Authorization prerequisites and evidence">{authorizationPath.map((step) => <Link key={step.key} to={step.href} className={`authorization-step authorization-${step.status}`}><span className="authorization-step-index">{step.index} / {step.key}</span><span className="authorization-step-status"><i />{step.statusLabel}</span><strong>{step.count}</strong><span className="authorization-step-title">{step.title}</span><span className="authorization-step-note">{step.note}</span><span className="authorization-step-link">Open section <ArrowUpRight size={13} /></span></Link>)}</div>}</Reveal>
+    <Reveal className="panel next-action-panel">{pathLoading ? <LoadingState label="Finding the next workspace action…" /> : accounts.error || agents.error || policies.error || held.error || receipts.error ? <ErrorState message="Next action is unavailable until live workspace data loads." /> : <><div><p className="eyebrow">Recommended next action</p><h2>{nextAction.title}</h2><p>{nextAction.description}</p></div><Link className="button button-outline" to={nextAction.href}>{nextAction.label}<ArrowRight size={15} /></Link></>}</Reveal>
     <Reveal className="console-grid"><section className="panel"><div className="panel-heading"><div><p className="eyebrow">Policy lifecycle</p><h2>Current policies</h2></div><Link to="/app/policies" className="text-link">View all <ArrowRight size={15} /></Link></div><DataTable columns={['Policy', 'Revision', 'State', 'Updated']} rows={(policies.data?.policies ?? []).slice(0, 5).map((p) => [<Link className="table-link" to={`/app/policies/${encodeURIComponent(p.id)}`} key={p.id}>{p.id}</Link>, `r${p.currentRevision}`, <StatusPill value={p.state} key={p.state} />, formatDate(p.createdAt)])} /></section><section className="panel"><div className="panel-heading"><div><p className="eyebrow">Evidence feed</p><h2>Latest signals</h2></div><Link to="/app/activity" className="text-link">Open activity <ArrowRight size={15} /></Link></div>{alerts.loading && <LoadingState />}{alerts.error && <ErrorState message={alerts.error} />}{!alerts.loading && !alerts.error && <ul className="signal-list">{(alerts.data?.alerts ?? []).map((alert) => <li key={alert.id}><span className="signal-icon"><ShieldCheck size={16} /></span><div><strong>{alert.title}</strong><small>{alert.eventType} · {formatDate(alert.createdAt)}</small></div></li>)}</ul>}{!alerts.loading && !alerts.error && alerts.data?.alerts.length === 0 && <EmptyState title="No alerts" body="The backend has no alert records for this organization." />}</section></Reveal>
     <Reveal className="panel decision-inbox"><div className="panel-heading"><div><p className="eyebrow">Human control / latest 5 requests</p><h2>Decision inbox</h2></div><Link className="text-link" to="/app/approvals">Review approvals →</Link></div>{held.loading ? <LoadingState label="Loading backend approval requests…" /> : held.error ? <ErrorState message="Approval data unavailable. No pending count is inferred." /> : <DataTable columns={['Action', 'Policy', 'State', 'Reason']} rows={(held.data?.actions ?? []).map((action) => [<Link className="table-link" key={action.actionId} to={`/app/activity/${encodeURIComponent(action.actionId)}`}>{action.actionId}</Link>, action.policyId, <StatusPill key={action.state} value={action.state} />, action.reason ?? 'Unavailable'])} emptyTitle="No held requests returned" emptyText="This backend query returned no held actions; it is not a readiness or execution guarantee." />}</Reveal>
     <Reveal className="panel recent-panel"><div className="panel-heading"><div><p className="eyebrow">Chain evidence</p><h2>Recent receipts</h2></div><Link to="/app/activity" className="text-link">View activity <ArrowRight size={15} /></Link></div>{receipts.loading ? <LoadingState /> : receipts.error ? <ErrorState message={receipts.error} /> : <DataTable columns={['Action', 'Chain', 'Transaction', 'State', 'Observed']} rows={(receipts.data?.receipts ?? []).map((receipt) => [<Link key={receipt.id} className="table-link" to={`/app/activity/${encodeURIComponent(receipt.actionId)}`}>{receipt.actionId}</Link>, String(receipt.chainId), receiptExplorerUrl(receipt.chainId, receipt.transactionHash) === null ? short(receipt.transactionHash) : <a key={receipt.id} href={receiptExplorerUrl(receipt.chainId, receipt.transactionHash) ?? undefined} target="_blank" rel="noreferrer">{short(receipt.transactionHash)} <ArrowUpRight size={12} /></a>, <StatusPill value={receipt.status} key={receipt.status} />, formatDate(receipt.observedAt)])} emptyTitle="No receipt evidence" emptyText="Receipts are observed independently; submission, confirmation and reconciliation are distinct." />}</Reveal>
@@ -778,6 +818,7 @@ function ConsolePage({ routeId }: { routeId: string }) {
   if (matchRoute(location.pathname) === undefined) return <NotFoundPage />;
   switch (routeId) {
     case 'overview': return <AppOverviewPage />;
+    case 'system-health': return <SystemHealthPage />;
     case 'agents': return <AgentsPage />;
     case 'agent-detail': return <AgentDetailPage />;
     case 'policies': return <PoliciesPage />;

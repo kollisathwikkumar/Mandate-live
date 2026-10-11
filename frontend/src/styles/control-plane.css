@@ -68,6 +68,16 @@ input:focus,textarea:focus,select:focus { border-color:var(--accent-highlight);b
 .metric-card { border:0;border-right:1px solid var(--border);border-radius:0;padding:24px;min-height:145px; }.metric-card:last-child { border-right:0; }
 .metric-card>span { font:10px var(--mono);color:var(--text-secondary); }.metric-card strong { color:var(--text-primary);font:500 42px var(--display); }.metric-card small { color:var(--text-tertiary);font-size:10px; }
 .authorization-path { gap:0;border:1px solid var(--border); }.authorization-path:before { display:none; }
+.authorization-step.authorization-unknown { border-color:var(--border);background:var(--surface-1); }
+.authorization-step.authorization-unknown .authorization-step-status { color:var(--text-tertiary); }
+.next-action-panel { display:flex;align-items:center;justify-content:space-between;gap:24px;margin-top:16px; }
+.next-action-panel h2 { margin:4px 0 8px;font-size:20px; }
+.next-action-panel p:last-child { margin:0;max-width:680px;font-size:12px; }
+.next-action-panel .button { display:inline-flex;align-items:center;gap:8px;white-space:nowrap; }
+.health-check-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:18px; }
+.health-check-card .panel-heading { display:flex;justify-content:space-between;gap:12px; }
+.health-check-card h2 { margin:0;font:12px var(--mono); }
+.health-check-card p { margin:16px 0 0;font-size:12px;line-height:1.7;overflow-wrap:anywhere; }
 .authorization-step { background:var(--surface-1);border:0;border-right:1px solid var(--border);padding:20px;min-height:215px; }
 .authorization-step:hover { transform:translateY(-2px);background:var(--surface-2);border-color:var(--border); }.authorization-step:last-child { border-right:0; }
 .authorization-step>strong { color:var(--text-primary);font-size:40px; }.authorization-step-title { font-size:13px;color:var(--text-primary); }
@@ -96,6 +106,7 @@ input:focus,textarea:focus,select:focus { border-color:var(--accent-highlight);b
 .page-scroll-progress { background:var(--accent-highlight);box-shadow:none; }
 @media(max-width:1100px){.authority-story{grid-template-columns:1fr 1fr;gap:25px}.data-origin{font-size:8px}.story-chapter{min-height:70svh}.console-content{padding:25px}}
 @media(max-width:760px){.marketing-nav{height:70px}.nav-links.open{background:var(--canvas);border-color:var(--border)}.cinematic-hero{min-height:0;padding:30px 6vw 0}.hero-kicker{align-items:start}.hero-kicker>span:last-child{display:none}.cinematic-hero h1{font-size:clamp(48px,10vw,70px);margin:55px 0 30px}.cinematic-hero-bottom{align-items:start;flex-direction:column}.capability-strip{grid-template-columns:1fr 1fr;margin-top:35px}.authority-story{display:flex;flex-direction:column-reverse;padding:40px 6vw;gap:20px}.story-sticky{position:static;justify-content:center;padding:0;width:100%}.story-chapter{min-height:0;padding:40px 0}.story-chapter h2{font-size:38px}.authority-video{height:min(72svh,680px);min-height:320px;max-height:min(72svh,680px)}.console-content{padding:20px 16px}.page-header{align-items:start}.page-header h1{font-size:32px}.metric-card{padding:18px}.metric-card strong{font-size:32px}.metric-grid{grid-template-columns:1fr 1fr}.panel{padding:18px}.authorization-step{padding:16px;border-bottom:1px solid var(--border)}.evidence-rail{grid-template-columns:repeat(7,120px)}.detail-card dl,.permission-scope dl{grid-template-columns:1fr}.permission-scope dd{margin-bottom:10px}.console-handoff{padding:50px 6vw}.console-handoff h2{font-size:40px}.login-card h1{font-size:45px}.hero-actions .button{font-size:11px}}
+@media(max-width:760px){.health-check-grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}.story-sticky{position:static}.magnet{transform:none!important}*,*::before,*::after{animation:none!important;transition:none!important}}
 .decision-inbox { margin-top:25px; }.approval-confirm-hash { display:block;overflow-wrap:anywhere;font:11px/1.8 var(--mono);padding:14px;background:var(--canvas);border:1px solid var(--border); }
 @media(min-width:761px) and (max-width:1100px){.story-sticky{padding:30px 0;top:18px}.authority-video{height:min(76svh,820px);min-height:360px;max-height:min(76svh,820px)}}

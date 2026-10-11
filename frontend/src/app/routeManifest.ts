@@ -22,6 +22,7 @@ export const ROUTE_MANIFEST = [
   { id: 'login', path: '/login', title: 'Sign in', audience: 'auth', description: 'Sign in through your organization identity provider.' },
   { id: 'invitation-accept', path: '/invitations/accept', title: 'Accept invitation', audience: 'auth', description: 'Redeem an organization invitation after signing in.' },
   { id: 'overview', path: '/app/overview', title: 'Overview', audience: 'app', description: 'Organization activity and control status.' },
+  { id: 'system-health', path: '/app/system-health', title: 'System health', audience: 'app', description: 'Live API and database readiness with unverified dependencies shown explicitly.' },
   { id: 'agents', path: '/app/agents', title: 'Agents', audience: 'app', description: 'Registered agent identities.' },
   { id: 'agent-detail', path: '/app/agents/:agentId', title: 'Agent detail', audience: 'app', description: 'Agent identity and lifecycle.' },
   { id: 'policies', path: '/app/policies', title: 'Policies', audience: 'app', description: 'Versioned authorization policies.' },

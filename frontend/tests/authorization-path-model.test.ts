@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildAuthorizationPath } from '../src/app/authorizationPathModel';
+import { buildAuthorizationPath, buildNextAction } from '../src/app/authorizationPathModel';
 
 describe('buildAuthorizationPath', () => {
   it('distinguishes active agent, policy and verified account readiness from final evidence', () => {
@@ -7,14 +7,17 @@ describe('buildAuthorizationPath', () => {
       agents: [{ status: 'ACTIVE' }, { status: 'REVOKED' }],
       policies: [{ state: 'ACTIVE' }, { state: 'DRAFT' }],
       accounts: [{ status: 'ACTIVE', verifiedAt: '2026-10-07T00:00:00.000Z' }, { status: 'ACTIVE', verifiedAt: null }],
+      heldActions: [{ state: 'HELD' }, { state: 'SUBMITTED' }],
       receipts: [{ status: 'FINAL' }, { status: 'TENTATIVE' }],
     });
 
     expect(path.map(({ count, status }) => [count, status])).toEqual([
-      [1, 'ready'], [1, 'ready'], [1, 'ready'], [1, 'evidence'],
+      [1, 'ready'], [1, 'ready'], [1, 'ready'], [1, 'attention'], ['Not verified', 'unknown'], [1, 'evidence'],
     ]);
     expect(path[1]?.note).toContain('Matching rules still apply');
-    expect(path[3]?.note).toContain('latest 5');
+    expect(path[3]?.note).toContain('approval does not submit');
+    expect(path[4]?.note).toContain('does not prove RPC availability');
+    expect(path[5]?.note).toContain('latest 5');
   });
 
   it('keeps execution prerequisites blocked when no active policy or verified account exists', () => {
@@ -22,28 +25,37 @@ describe('buildAuthorizationPath', () => {
       agents: [],
       policies: [{ state: 'DRAFT' }, { state: 'REVOKED' }, { state: 'EXPIRED' }],
       accounts: [{ status: 'ACTIVE', verifiedAt: null }, { status: 'UNSUPPORTED', verifiedAt: '2026-10-07T00:00:00.000Z' }],
+      heldActions: [],
       receipts: [],
     });
 
     expect(path.map(({ count, status }) => [count, status])).toEqual([
-      [0, 'attention'], [0, 'attention'], [0, 'attention'], [0, 'pending'],
+      [0, 'attention'], [0, 'attention'], [0, 'attention'], [0, 'pending'], ['Not verified', 'unknown'], [0, 'pending'],
     ]);
     expect(path[1]?.note).toContain('Actions remain blocked');
     expect(path[2]?.note).toContain('supported account');
   });
 
   it('reports zero evidence independently of authorization readiness', () => {
-    const path = buildAuthorizationPath({ agents: [{ status: 'ACTIVE' }], policies: [{ state: 'ACTIVE' }], accounts: [{ status: 'ACTIVE', verifiedAt: '2026-10-07T00:00:00.000Z' }], receipts: [{ status: 'REORGED' }, { status: 'TENTATIVE' }] });
+    const path = buildAuthorizationPath({ agents: [{ status: 'ACTIVE' }], policies: [{ state: 'ACTIVE' }], accounts: [{ status: 'ACTIVE', verifiedAt: '2026-10-07T00:00:00.000Z' }], heldActions: [], receipts: [{ status: 'REORGED' }, { status: 'TENTATIVE' }] });
     expect(path[0]?.status).toBe('ready');
     expect(path[1]?.status).toBe('ready');
     expect(path[2]?.status).toBe('ready');
-    expect(path[3]?.count).toBe(0);
-    expect(path[3]?.note).toContain('No final receipts');
+    expect(path[5]?.count).toBe(0);
+    expect(path[5]?.note).toContain('No final receipts');
   });
 
   it('uses plural receipt copy and excludes paused accounts even if previously verified', () => {
-    const path = buildAuthorizationPath({ agents: [], policies: [], accounts: [{ status: 'PAUSED', verifiedAt: '2026-10-07T00:00:00.000Z' }], receipts: [{ status: 'FINAL' }, { status: 'FINAL' }, { status: 'TENTATIVE' }] });
+    const path = buildAuthorizationPath({ agents: [], policies: [], accounts: [{ status: 'PAUSED', verifiedAt: '2026-10-07T00:00:00.000Z' }], heldActions: [], receipts: [{ status: 'FINAL' }, { status: 'FINAL' }, { status: 'TENTATIVE' }] });
     expect(path[2]?.count).toBe(0);
-    expect(path[3]?.note).toContain('2 final receipts');
+    expect(path[5]?.note).toContain('2 final receipts');
+  });
+
+  it('recommends the next real setup action and prioritizes existing held actions', () => {
+    const empty = { agents: [], policies: [], accounts: [], heldActions: [], receipts: [] } as const;
+    expect(buildNextAction(empty).title).toBe('Register an agent');
+    expect(buildNextAction({ ...empty, agents: [{ status: 'ACTIVE' }] }).title).toBe('Verify a supported account');
+    expect(buildNextAction({ ...empty, agents: [{ status: 'ACTIVE' }], accounts: [{ status: 'ACTIVE', verifiedAt: '2026-10-07T00:00:00.000Z' }] }).title).toBe('Create and authorize a policy');
+    expect(buildNextAction({ ...empty, agents: [{ status: 'ACTIVE' }], policies: [{ state: 'ACTIVE' }], accounts: [{ status: 'ACTIVE', verifiedAt: '2026-10-07T00:00:00.000Z' }], heldActions: [{ state: 'HELD' }] }).title).toBe('Review held actions');
   });
 });

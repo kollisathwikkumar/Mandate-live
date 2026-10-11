@@ -3,10 +3,10 @@ import { ROUTE_MANIFEST, matchRoute } from '../src/app/routeManifest';
 
 describe('Mandate page route manifest', () => {
   it('defines the architecture page templates and invitation onboarding route', () => {
-    expect(ROUTE_MANIFEST).toHaveLength(21);
+    expect(ROUTE_MANIFEST).toHaveLength(22);
     expect(ROUTE_MANIFEST.map(({ path }) => path)).toEqual([
       '/', '/how-it-works', '/security', '/integrations', '/developers', '/login', '/invitations/accept',
-      '/app/overview', '/app/agents', '/app/agents/:agentId', '/app/policies',
+      '/app/overview', '/app/system-health', '/app/agents', '/app/agents/:agentId', '/app/policies',
       '/app/policies/new', '/app/policies/:policyId', '/app/policies/:policyId/edit',
       '/app/policies/:policyId/simulate', '/app/approvals', '/app/activity',
       '/app/activity/:actionId', '/app/settings/team', '/app/settings/accounts',
