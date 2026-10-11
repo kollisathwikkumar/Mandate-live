@@ -113,3 +113,23 @@ input:focus,textarea:focus,select:focus { border-color:var(--accent-highlight);b
 .returned-evidence { border-top:1px solid var(--border);padding-top:16px;margin-top:16px; }.returned-evidence p { font-size:12px; }.returned-evidence a,.returned-evidence>code{display:block;font-size:11px;overflow-wrap:anywhere;margin-top:10px}.evidence-inspector small{display:block;margin-top:8px}
 .org-avatar,.user-avatar,.section-icon,.login-mark{background:var(--accent-surface);color:var(--text-primary);border-color:var(--accent-action);box-shadow:none}.code-top i{background:var(--border-strong)}.nav-dot{display:none}.mobile-backdrop{background:var(--canvas)}
 @media(max-width:760px){.scope-tabs button,.icon-button,.row-actions .button{min-height:44px}}
+
+/* Make the six-step authorization path read as a calm, evenly divided dashboard grid. */
+.authorization-path-panel .panel-heading{align-items:flex-start;gap:20px 28px}
+.authorization-path-panel .panel-heading>div{min-width:0;flex:1 1 auto}
+.authorization-path-panel .panel-heading h2{max-width:980px;font-size:clamp(22px,1.65vw,28px);line-height:1.24;letter-spacing:-.035em}
+.authorization-path-panel .panel-heading .text-link{flex:0 0 auto;margin-top:7px}
+.authorization-path-intro{max-width:78ch;margin:0 0 24px;font-size:13px;line-height:1.75}
+.authorization-path{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(258px,1fr);align-items:stretch;gap:12px;border:0}
+.authorization-path:before{display:none}
+.authorization-step{height:100%;min-height:258px;padding:18px 20px;border:1px solid var(--border);border-radius:3px;background:var(--surface-1);display:grid;grid-template-rows:auto auto auto auto minmax(0,1fr) auto;align-content:stretch;transition:transform .2s,border-color .2s,background .2s}
+.authorization-step:hover{transform:translateY(-2px);border-color:var(--border-strong);background:var(--surface-2)}
+.authorization-step-index{justify-self:start;padding:4px 7px;font-size:9px;line-height:1.35;letter-spacing:.08em}
+.authorization-step-status{min-height:30px;margin:15px 0 10px;gap:9px;font-size:9px;line-height:1.5;letter-spacing:.045em}
+.authorization-step-status i{width:8px;height:8px}
+.authorization-step>strong{min-height:1.05em;margin:0 0 5px;font-size:clamp(28px,2.1vw,38px);line-height:1.05;letter-spacing:-.045em;overflow-wrap:anywhere}
+.authorization-step-title{min-height:1.45em;font-size:14px;line-height:1.45;letter-spacing:-.01em}
+.authorization-step-note{margin-top:9px;font-size:12px;line-height:1.65;color:var(--text-secondary)}
+.authorization-step-link{gap:7px;padding-top:17px;font-size:10px;line-height:1.5}
+@media(max-width:1100px){.authorization-path{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(250px,1fr)}}
+@media(max-width:760px){.authorization-path-panel .panel-heading{align-items:flex-start;flex-direction:column;gap:12px}.authorization-path-panel .panel-heading h2{font-size:clamp(20px,5vw,24px)}.authorization-path-panel .panel-heading .text-link{margin-top:0}.authorization-path-intro{font-size:12px;margin-bottom:18px}.authorization-path{grid-template-columns:1fr;grid-auto-rows:auto;gap:10px}.authorization-step{height:auto;min-height:220px;padding:17px 18px;grid-template-rows:auto auto auto auto auto auto}}
