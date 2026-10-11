@@ -1,0 +1,17 @@
+/* Mandate authority-chamber tokens. Black/white are structural; color carries roles. */
+:root {
+  color-scheme: dark;
+  --canvas: #000000; --surface-base: #000000; --surface-1: #0A0A0A; --surface-2: #111111; --surface-3: #171717;
+  --text-primary: #FFFFFF; --text-secondary: #A3A3A3; --text-tertiary: #858585;
+  --border: #262626; --border-strong: #333333;
+  --accent-action: #4C1D95; --accent-hover: #5B21B6; --accent-highlight: #9665FF; --accent-surface: #190E29;
+  --indigo-surface: #10101E; --state-success: #082A20; --state-success-text: #4AAE88;
+  --state-attention: #30220D; --state-attention-text: #C49645; --state-danger: #330D16; --state-danger-text: #DC5D76;
+  --state-neutral: #171C24; --state-neutral-text: #A3ADBC;
+  --focus: var(--accent-highlight); --hover: var(--surface-3); --shadow: 0 24px 64px rgb(0 0 0 / .5);
+  --accent-rgb: 109 40 217; --neutral-rgb: 255 255 255; --black-rgb: 0 0 0;
+  --success-rgb: 8 42 32; --attention-rgb: 48 34 13; --danger-rgb: 51 13 22;
+  --ink: var(--canvas); --surface: var(--surface-1); --line: var(--border); --muted: var(--text-secondary); --quiet: var(--text-tertiary);
+  --violet: var(--accent-highlight); --violet-strong: var(--accent-action); --mint: var(--state-success-text); --red: var(--state-danger-text); --amber: var(--state-attention-text);
+  --type-body: 14px; --type-label: 12px; --type-meta: 11px;
+}
