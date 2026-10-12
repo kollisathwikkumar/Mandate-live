@@ -20,7 +20,7 @@ import { buildSystemHealthChecks } from './systemHealthModel';
 import { buildOverviewMetrics } from './overviewMetrics';
 import { apiReadinessState } from './apiReadinessState';
 import { getPolicyEditorState } from './policyEditorState';
-import { validatePolicyDraftReferences } from './policyDraftReferences';
+import { buildPolicyDraft, localDateTimeValue, type PolicyDraftFormValues } from './policyDraftForm';
 import { RESOURCE_ID_PATTERN } from './inputPatterns';
 import { canVerifyAccount } from './accountVerificationAction';
 import { receiptExplorerUrl } from './receiptExplorer';
@@ -529,61 +529,126 @@ const blankPolicy = `{
 function PoliciesPage() {
   const org = useOrganization(); const base = org.organizationId === null ? null : `/api/v1/orgs/${encodeURIComponent(org.organizationId)}`;
   const { data, error, loading } = useApi<PolicyList>(base === null ? null : `${base}/policies`, PolicyListSchema);
-  return <><PageHeader eyebrow="Control / policies" title="Policies" description="Immutable, versioned authorization rules. A draft does not become active until the required account-owner authorization is completed." action={<Link className="button button-primary" to="/app/policies/new"><Plus size={16} /> Draft policy</Link>} />{loading ? <LoadingState /> : error ? <ErrorState message={error} /> : <section className="panel"><DataTable columns={['Policy', 'Account', 'Revision', 'State', 'Revision hash', 'Created']} rows={(data?.policies ?? []).map((policy) => [<Link className="table-link" to={`/app/policies/${encodeURIComponent(policy.id)}`} key={policy.id}>{policy.id}</Link>, policy.accountId, `r${policy.currentRevision}`, <StatusPill key={policy.state} value={policy.state} />, <code key={`${policy.id}-hash`}>{short(policy.revisionHash)}</code>, formatDate(policy.createdAt)])} emptyTitle="No policies yet" emptyText="Create a draft after registering an agent and verifying a supported account." /></section>}<p className="bottom-note">Policy bodies are strict typed JSON. Unknown fields are rejected by the policy contract.</p></>;
+  return <><PageHeader eyebrow="Control / policies" title="Policies" description="Set clear limits on what each agent can do. A policy only grants permission after its Safe owner activates it." action={<Link className="button button-primary" to="/app/policies/new"><Plus size={16} /> Create policy</Link>} />{loading ? <LoadingState /> : error ? <ErrorState message={error} /> : <section className="panel"><DataTable columns={['Policy', 'Safe account', 'Version', 'Status', 'Rule fingerprint', 'Created']} rows={(data?.policies ?? []).map((policy) => [<Link className="table-link" to={`/app/policies/${encodeURIComponent(policy.id)}`} key={policy.id}>{policy.id}</Link>, policy.accountId, `v${policy.currentRevision}`, <StatusPill key={policy.state} value={policy.state} />, <code key={`${policy.id}-hash`}>{short(policy.revisionHash)}</code>, formatDate(policy.createdAt)])} emptyTitle="No policies yet" emptyText="Create a policy to define one safe action for an active agent." /></section>}</>;
+}
+
+function newPolicyDraft(): PolicyDraftFormValues {
+  const now = new Date();
+  const expiry = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  return {
+    policyId: `policy-${crypto.randomUUID().slice(0, 8)}`,
+    owner: '', account: '', agentId: '', agentAddress: '', tokenAddress: '',
+    selector: '0xa9059cbb', recipient: '', tokenDecimals: 18, perAction: '0.01', cumulative: '0.05',
+    windowHours: 24, approvalThreshold: '0', maxActions: 10,
+    validAfter: localDateTimeValue(now), expiresAt: localDateTimeValue(expiry),
+  };
 }
 
 function PolicyEditorPage({ revision = false }: { revision?: boolean }) {
   const mutate = useMutationTransport();
   const { policyId = '' } = useParams(); const org = useOrganization(); const { accessToken } = useAuth(); const navigate = useNavigate();
-  const policies = useApi<PolicyList>(org.organizationId ? `/api/v1/orgs/${encodeURIComponent(org.organizationId)}/policies` : null, PolicyListSchema);
+  const policies = useApi<PolicyList>(revision && org.organizationId ? `/api/v1/orgs/${encodeURIComponent(org.organizationId)}/policies` : null, PolicyListSchema);
   const draftAgents = useApi<AgentList>(!revision && org.organizationId ? `/api/v1/orgs/${encodeURIComponent(org.organizationId)}/agents` : null, AgentListSchema);
   const draftAccounts = useApi<AccountList>(!revision && org.organizationId ? `/api/v1/orgs/${encodeURIComponent(org.organizationId)}/accounts` : null, AccountListSchema);
   const current = policies.data?.policies.find((policy) => policy.id === policyId);
   const revisionPath = revision && org.organizationId && current ? `/api/v1/orgs/${encodeURIComponent(org.organizationId)}/policies/${encodeURIComponent(policyId)}/revisions/${current.currentRevision}` : null;
   const currentBody = useApi<PolicyRevision>(revisionPath, PolicyRevisionSchema);
-  const [json, setJson] = useState(blankPolicy); const [message, setMessage] = useState<string | null>(null); const [saving, setSaving] = useState(false);
+  const [json, setJson] = useState(blankPolicy);
+  const [draft, setDraft] = useState<PolicyDraftFormValues>(newPolicyDraft);
+  const [message, setMessage] = useState<string | null>(null); const [saving, setSaving] = useState(false);
   useEffect(() => { if (revision && currentBody.data) setJson(JSON.stringify(currentBody.data, null, 2)); }, [revision, currentBody.data]);
+  useEffect(() => {
+    if (!revision && draftAgents.data && !draft.agentId) {
+      const firstAgent = draftAgents.data.agents.find((agent) => agent.status === 'ACTIVE');
+      if (firstAgent) setDraft((value) => ({ ...value, agentId: firstAgent.id }));
+    }
+  }, [revision, draft.agentId, draftAgents.data]);
+  useEffect(() => {
+    if (!revision && draftAccounts.data && !draft.account) {
+      const firstAccount = draftAccounts.data.accounts.find((account) => account.status === 'ACTIVE' && account.verifiedAt !== null);
+      if (firstAccount) setDraft((value) => ({ ...value, account: firstAccount.address }));
+    }
+  }, [revision, draft.account, draftAccounts.data]);
   const loadError = policies.error ?? currentBody.error;
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (org.organizationId === null || accessToken === null) return;
     setSaving(true); setMessage(null);
     try {
-      const body = z.record(z.string(), z.json()).parse(JSON.parse(json));
+      let revisionPayload: PolicyRevision;
       const nextRevision = revision ? (current?.currentRevision ?? 0) + 1 : 1;
-      if (revision && current === undefined) throw new Error('The current policy could not be loaded.');
-      const revisionPayload = PolicyRevisionSchema.parse({ ...body, organizationId: org.organizationId, policyId: revision ? policyId : body.policyId, revision: nextRevision });
-      if (!revision) {
-        if (draftAgents.data === null || draftAccounts.data === null) throw new Error('Agent and account prerequisites have not loaded. Retry the organization data before submitting.');
-        const referenceStatus = validatePolicyDraftReferences(revisionPayload, draftAgents.data.agents, draftAccounts.data.accounts);
-        if (referenceStatus === 'agent-unavailable') throw new Error('Choose an active agent registered in this organization.');
-        if (referenceStatus === 'account-unavailable') throw new Error('Choose an active or provisioning smart account registered for the same chain and adapter in this organization.');
+      if (revision) {
+        if (current === undefined) throw new Error('The current policy could not be loaded.');
+        const body = z.record(z.string(), z.json()).parse(JSON.parse(json));
+        revisionPayload = PolicyRevisionSchema.parse({ ...body, organizationId: org.organizationId, policyId, revision: nextRevision });
+      } else {
+        const agent = draftAgents.data?.agents.find((item) => item.id === draft.agentId);
+        const account = draftAccounts.data?.accounts.find((item) => item.address.toLowerCase() === draft.account.toLowerCase());
+        if (!agent) throw new Error('Choose an active agent from this workspace.');
+        if (!account) throw new Error('Choose an account from this workspace.');
+        revisionPayload = buildPolicyDraft(draft, org.organizationId, agent, account);
       }
       const url = revision ? `/api/v1/orgs/${encodeURIComponent(org.organizationId)}/policies/${encodeURIComponent(policyId)}/revisions` : `/api/v1/orgs/${encodeURIComponent(org.organizationId)}/policies`;
       const response = await mutate(url, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(revisionPayload) });
       const result = await response.json();
       if (!response.ok) { const messageText = typeof result === 'object' && result !== null && 'error' in result && typeof result.error === 'object' && result.error !== null && 'message' in result.error ? String(result.error.message) : 'Policy request was rejected'; throw new Error(messageText); }
-      navigate(`/app/policies/${encodeURIComponent(revision ? policyId : ('policyId' in result && typeof result.policyId === 'string' ? result.policyId : ''))}`);
-    } catch (failure) { setMessage(failure instanceof Error ? failure.message : 'Invalid policy JSON'); }
+      navigate(`/app/policies/${encodeURIComponent(revision ? policyId : ('policyId' in result && typeof result.policyId === 'string' ? result.policyId : revisionPayload.policyId))}`);
+    } catch (failure) { setMessage(failure instanceof Error ? failure.message : revision ? 'Check the policy fields and try again.' : 'Check the policy details and try again.'); }
     finally { setSaving(false); }
   }
   const editorState = getPolicyEditorState({
-    isRevision: revision,
-    policiesLoading: policies.loading,
-    policiesLoaded: policies.data !== null,
-    policiesFailed: policies.error !== null,
-    policyExists: current !== undefined,
-    revisionLoading: currentBody.loading,
-    revisionLoaded: currentBody.data !== null,
-    revisionFailed: currentBody.error !== null,
+    isRevision: revision, policiesLoading: policies.loading, policiesLoaded: policies.data !== null,
+    policiesFailed: policies.error !== null, policyExists: current !== undefined,
+    revisionLoading: currentBody.loading, revisionLoaded: currentBody.data !== null, revisionFailed: currentBody.error !== null,
   });
   const editorLoadError = loadError ?? 'The policy or canonical revision could not be loaded.';
   const draftReferencesLoading = !revision && (draftAgents.loading || draftAccounts.loading || (draftAgents.data === null && draftAgents.error === null) || (draftAccounts.data === null && draftAccounts.error === null));
-  const activeAgentCount = draftAgents.data?.agents.filter((agent) => agent.status === 'ACTIVE').length ?? 0;
-  const activeAccountCount = draftAccounts.data?.accounts.filter((account) => account.status === 'ACTIVE').length ?? 0;
-  const provisioningAccountCount = draftAccounts.data?.accounts.filter((account) => account.status === 'PROVISIONING').length ?? 0;
   const draftReferenceError = draftAgents.error ?? draftAccounts.error;
-  const draftPrerequisitesReady = activeAgentCount > 0 && activeAccountCount + provisioningAccountCount > 0;
-  return <><PageHeader eyebrow={revision ? 'Policy / new revision' : 'Policy / create'} title={revision ? `Revise ${policyId}` : 'Draft a policy'} description="Provide a complete PolicyRevision object. The backend validates strict fields, tenant binding, and revision numbering." />{editorState === 'error' && <ErrorState message={editorLoadError} />}{editorState === 'missing' && <ErrorState message="This policy was not found in the selected organization." />}{editorState === 'loading' ? <LoadingState label="Loading the immutable revision to edit…" /> : editorState === 'ready' ? <>{!revision && draftReferencesLoading && <LoadingState label="Checking this organization’s agents and draft-eligible smart accounts…" />}{!revision && draftReferenceError !== null && <div className="callout" role="alert"><LockKey size={20} /><p>Organization prerequisites could not be checked: {draftReferenceError} <button type="button" className="text-link" onClick={() => { draftAgents.refetch(); draftAccounts.refetch(); }}>Retry</button></p></div>}{!revision && !draftReferencesLoading && draftReferenceError === null && !draftPrerequisitesReady && <div className="callout" role="status"><LockKey size={20} /><p>A draft needs an active organization agent and a supported ACTIVE or PROVISIONING smart account. Active accounts: {activeAccountCount}. Provisioning accounts: {provisioningAccountCount}; drafts linked to these accounts are not executable until backend-confirmed activation. <Link className="text-link" to="/app/agents">Register an agent</Link> · <Link className="text-link" to="/app/settings/accounts">Add an account</Link>.</p></div>}{!revision && provisioningAccountCount > 0 && <div className="callout" role="status"><LockKey size={20} /><p>Provisioning stays a distinct non-active state. A policy draft can be prepared, but the API will reject simulation/execution until the required account activation is independently verified.</p></div>}<section className="panel editor-panel"><form className="form-stack" onSubmit={(event) => void submit(event)}><label>Policy revision JSON<textarea className="json-editor" spellCheck={false} value={json} onChange={(event) => setJson(event.target.value)} /></label><p className="form-hint">The JSON starts with example values: replace the policy ID and every address/agent reference with this organization’s real resources. A draft is not an execution grant. Saving revision {revision ? (current?.currentRevision ?? 0) + 1 : 1} does not activate the policy.</p>{message && <p className="form-error" role="alert">{message}</p>}<button className="button button-primary" disabled={saving || (!revision && (draftReferencesLoading || draftReferenceError !== null || !draftPrerequisitesReady))}>{saving ? 'Submitting…' : revision ? 'Create immutable revision' : 'Create draft'} <ArrowRight size={16} /></button></form></section></> : null}</>;
+  const activeAgents = draftAgents.data?.agents.filter((agent) => agent.status === 'ACTIVE') ?? [];
+  const verifiedAccounts = draftAccounts.data?.accounts.filter((account) => account.status === 'ACTIVE' && account.verifiedAt !== null) ?? [];
+  const draftPrerequisitesReady = activeAgents.length > 0 && verifiedAccounts.length > 0;
+  const updateDraft = (field: keyof PolicyDraftFormValues, value: string | number) => setDraft((previous) => ({ ...previous, [field]: value }));
+  const revisionForm = <section className="panel editor-panel"><form className="form-stack" onSubmit={(event) => void submit(event)}><label>Policy revision JSON<textarea className="json-editor" spellCheck={false} value={json} onChange={(event) => setJson(event.target.value)} /></label><p className="form-hint">A new revision changes the policy rules. Saving does not activate it; the owner must authorize activation separately.</p>{message && <p className="form-error" role="alert">{message}</p>}<button className="button button-primary" disabled={saving}>{saving ? 'Saving…' : 'Save new revision'} <ArrowRight size={16} /></button></form></section>;
+  const draftForm = <>
+    {draftReferencesLoading && <LoadingState label="Loading your active agents and verified Safe accounts…" />}
+    {draftReferenceError && <div className="callout" role="alert"><LockKey size={20} /><p>Could not load your workspace resources: {draftReferenceError} <button type="button" className="text-link" onClick={() => { draftAgents.refetch(); draftAccounts.refetch(); }}>Retry</button></p></div>}
+    {!draftReferencesLoading && !draftReferenceError && !draftPrerequisitesReady && <div className="callout" role="status"><LockKey size={20} /><p>To create a policy, this workspace needs one active agent and one active, verified Safe account. <Link className="text-link" to="/app/agents">View agents</Link> · <Link className="text-link" to="/app/settings/accounts">View accounts</Link>.</p></div>}
+    <section className="policy-builder-intro"><div className="policy-builder-step">POLICY BUILDER / 1 MINUTE</div><h2>Choose who can do what.</h2><p>Pick an agent and Safe, then set one permitted token transfer, the recipient, and limits. You can review every rule before saving.</p></section>
+    <form className="policy-builder" onSubmit={(event) => void submit(event)}>
+      <section className="policy-builder-section"><div className="policy-builder-heading"><span>01</span><div><h3>Choose the agent and Safe</h3><p>The policy only applies to this agent acting through this verified Safe.</p></div></div>
+        <div className="policy-builder-fields">
+          <label>Agent<select required value={draft.agentId} onChange={(event) => updateDraft('agentId', event.target.value)}><option value="">Select an active agent</option>{activeAgents.map((agent) => <option key={agent.id} value={agent.id}>{agent.displayName} · {agent.id}</option>)}</select></label>
+          <label>Verified Safe<select required value={draft.account} onChange={(event) => updateDraft('account', event.target.value)}><option value="">Select an active verified Safe</option>{verifiedAccounts.map((account) => <option key={account.id} value={account.address}>{short(account.address)} · chain {account.chainId}</option>)}</select></label>
+          <label>Safe owner wallet address<input required autoComplete="off" spellCheck={false} value={draft.owner} onChange={(event) => updateDraft('owner', event.target.value)} placeholder="0x… (the Safe owner who approves changes)" /><small>Use the owner wallet address shown in the Safe.</small></label>
+          <label>Agent signing wallet address<input required autoComplete="off" spellCheck={false} value={draft.agentAddress} onChange={(event) => updateDraft('agentAddress', event.target.value)} placeholder="0x… (the agent's on-chain signer)" /><small>This is the agent signer enabled in the Safe’s Mandate module.</small></label>
+        </div>
+      </section>
+      <section className="policy-builder-section"><div className="policy-builder-heading"><span>02</span><div><h3>Set the allowed transfer</h3><p>Mandate will restrict this policy to the token, method, and recipient below.</p></div></div>
+        <div className="policy-builder-fields">
+          <label>Token contract address<input required autoComplete="off" spellCheck={false} value={draft.tokenAddress} onChange={(event) => updateDraft('tokenAddress', event.target.value)} placeholder="0x… (the token contract)" /><small>For this transfer template, the token address is also the target contract.</small></label>
+          <label>Allowed recipient address<input required autoComplete="off" spellCheck={false} value={draft.recipient} onChange={(event) => updateDraft('recipient', event.target.value)} placeholder="0x… (the only permitted recipient)" /></label>
+          <label>Action<select value={draft.selector} onChange={(event) => updateDraft('selector', event.target.value)}><option value="0xa9059cbb">Send tokens (ERC-20 transfer)</option></select><small>Only this action will be allowed by this policy.</small></label>
+          <label>Policy ID<input required maxLength={128} value={draft.policyId} onChange={(event) => updateDraft('policyId', event.target.value)} /><small>A unique internal name; you can keep the generated value.</small></label>
+        </div>
+      </section>
+      <section className="policy-builder-section"><div className="policy-builder-heading"><span>03</span><div><h3>Set limits and approval</h3><p>Enter normal token amounts. Mandate converts them to the exact on-chain units using the token decimals below.</p></div></div>
+        <div className="policy-builder-fields policy-builder-fields-three">
+          <label>Token decimals<input required type="number" min="0" max="36" step="1" value={draft.tokenDecimals} onChange={(event) => updateDraft('tokenDecimals', Number(event.target.value))} /><small>Check the token’s details in the explorer; common tokens use 18.</small></label>
+          <label>Maximum per transfer<input required inputMode="decimal" value={draft.perAction} onChange={(event) => updateDraft('perAction', event.target.value)} /></label>
+          <label>Maximum total in window<input required inputMode="decimal" value={draft.cumulative} onChange={(event) => updateDraft('cumulative', event.target.value)} /></label>
+          <label>Window (hours)<input required type="number" min="1" step="1" value={draft.windowHours} onChange={(event) => updateDraft('windowHours', Number(event.target.value))} /></label>
+          <label>Ask for human approval above<input inputMode="decimal" value={draft.approvalThreshold} onChange={(event) => updateDraft('approvalThreshold', event.target.value)} /><small>0 (the default) sends every positive transfer to human approval. Leave blank to skip this threshold rule.</small></label>
+          <label>Maximum transfers in window<input required type="number" min="1" step="1" value={draft.maxActions} onChange={(event) => updateDraft('maxActions', Number(event.target.value))} /></label>
+        </div>
+      </section>
+      <section className="policy-builder-section"><div className="policy-builder-heading"><span>04</span><div><h3>Choose when it applies</h3><p>The policy stops being valid at the expiry time.</p></div></div>
+        <div className="policy-builder-fields"><label>Start time<input required type="datetime-local" value={draft.validAfter} onChange={(event) => updateDraft('validAfter', event.target.value)} /></label><label>Expiry time<input required type="datetime-local" value={draft.expiresAt} onChange={(event) => updateDraft('expiresAt', event.target.value)} /></label></div>
+      </section>
+      <div className="policy-builder-review"><strong>What happens next?</strong><p>Saving creates a draft only. It does not grant permission or submit a transaction. You’ll review the rule, then complete Safe-owner activation separately.</p></div>
+      {message && <p className="form-error" role="alert">{message}</p>}
+      <button className="button button-primary" disabled={saving || draftReferencesLoading || draftReferenceError !== null || !draftPrerequisitesReady}>{saving ? 'Creating policy…' : 'Review and create draft'} <ArrowRight size={16} /></button>
+    </form>
+  </>;
+  return <><PageHeader eyebrow={revision ? 'Policy / new revision' : 'Policy / create'} title={revision ? `Revise ${policyId}` : 'Create a policy'} description={revision ? 'Update the rules in a new version. The owner must authorize the new version before it becomes active.' : 'Create clear, narrow rules for one agent and one verified Safe—no JSON editing needed.'} />{editorState === 'error' && <ErrorState message={editorLoadError} />}{editorState === 'missing' && <ErrorState message="This policy was not found in the selected organization." />}{editorState === 'loading' ? <LoadingState label="Loading the policy to revise…" /> : editorState === 'ready' ? revision ? revisionForm : draftForm : null}</>;
 }
 
 function PolicyDetailPage() {

@@ -35,6 +35,28 @@
 /* Compact action cluster and one-time secret disclosure for the live API flows. */
 .row-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.row-actions .button{min-height:32px;padding:0 9px;font-size:9px}.secret-value{display:block;max-height:180px;overflow:auto;overflow-wrap:anywhere;padding:14px;border:1px solid rgb(var(--accent-rgb) / .35);background:rgb(var(--accent-rgb) / .07);color:var(--text-primary);font:11px/1.7 var(--mono);user-select:all}.modal-card .form-stack .eyebrow{margin:0;color:var(--text-secondary);font:9px/1.5 var(--mono);overflow-wrap:anywhere}.row-actions button{white-space:nowrap}@media(max-width:760px){.row-actions{align-items:stretch}.row-actions .button{flex:1 0 auto}}
 .policy-lifecycle{grid-column:1/-1;margin-top:16px}.lifecycle-plan-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;margin:17px 0 10px;padding:11px 13px;border:1px solid rgb(var(--accent-rgb) / .25);background:rgb(var(--accent-rgb) / .045);color:var(--accent-highlight);font:9px var(--mono)}.policy-lifecycle .json-readout{max-height:340px}.credential-row .row-actions{justify-content:flex-end}
+.policy-builder-intro{margin:8px 0 14px;padding:22px 24px;border:1px solid var(--line);background:linear-gradient(120deg,rgb(var(--accent-rgb) / .07),var(--surface-1) 60%);}
+.policy-builder-step{color:var(--accent-highlight);font:9px var(--mono);letter-spacing:.08em}
+.policy-builder-intro h2{margin:12px 0 7px;color:var(--text-primary);font:600 23px var(--display);letter-spacing:-.04em}
+.policy-builder-intro p{max-width:690px;margin:0;color:var(--text-secondary);font-size:12px;line-height:1.7}
+.policy-builder{display:grid;gap:12px}
+.policy-builder-section{padding:21px 23px;border:1px solid var(--line);background:var(--surface-1)}
+.policy-builder-heading{display:flex;align-items:flex-start;gap:14px;margin-bottom:19px}
+.policy-builder-heading>span{display:grid;place-items:center;width:30px;height:30px;flex:0 0 30px;border:1px solid rgb(var(--accent-rgb) / .28);background:rgb(var(--accent-rgb) / .07);color:var(--accent-highlight);font:10px var(--mono)}
+.policy-builder-heading h3{margin:1px 0 5px;color:var(--text-primary);font:600 14px var(--display)}
+.policy-builder-heading p{margin:0;color:var(--text-tertiary);font-size:10px;line-height:1.6}
+.policy-builder-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px}
+.policy-builder-fields label{display:flex;min-width:0;flex-direction:column;gap:7px;color:var(--text-secondary);font-size:10px;font-weight:600}
+.policy-builder-fields input,.policy-builder-fields select{width:100%;min-height:43px;padding:0 12px;border:1px solid var(--line-strong);border-radius:3px;background:var(--surface-base);color:var(--text-primary);font:11px var(--sans);outline:none}
+.policy-builder-fields input:focus,.policy-builder-fields select:focus{border-color:var(--accent-highlight);box-shadow:0 0 0 3px rgb(var(--accent-rgb) / .11)}
+.policy-builder-fields input::placeholder{color:var(--text-tertiary);opacity:.8}
+.policy-builder-fields small{color:var(--text-tertiary);font-size:9px;font-weight:400;line-height:1.55}
+.policy-builder-fields-three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.policy-builder-review{padding:15px 18px;border-left:3px solid var(--accent-highlight);background:rgb(var(--accent-rgb) / .055)}
+.policy-builder-review strong{color:var(--text-primary);font-size:11px}
+.policy-builder-review p{margin:6px 0 0;color:var(--text-secondary);font-size:10px;line-height:1.7}
+.policy-builder>.button{justify-self:start;min-width:250px}
+@media(max-width:760px){.policy-builder-fields,.policy-builder-fields-three{grid-template-columns:1fr}.policy-builder-section{padding:17px 15px}.policy-builder-intro{padding:19px 16px}.policy-builder>.button{width:100%;min-width:0}}
 .developer-page .visual-stage{opacity:.34}.developer-content{position:relative;z-index:1}.developer-code-reveal{transform-origin:50% 15%}.developer-page .source-note{position:relative;z-index:1}
 .overview-stage{position:relative}.overview-ambient{position:absolute;inset:-40px -42px -80px;z-index:0;pointer-events:none;opacity:.18}.overview-content{position:relative;z-index:1}
 
