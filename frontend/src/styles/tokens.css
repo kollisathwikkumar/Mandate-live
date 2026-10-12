@@ -1,7 +1,7 @@
-/* Mandate palette: deep blue canvas, clean white workspace surfaces, vivid blue accents. */
+/* Mandate palette: clean white canvas, dark ink, and confident blue actions. */
 :root {
   color-scheme: light;
-  --canvas: #123B78; --surface-base: #123B78; --surface-1: #FFFFFF; --surface-2: #F3F7FC; --surface-3: #E8EFF8;
+  --canvas: #FFFFFF; --surface-base: #FFFFFF; --surface-1: #FFFFFF; --surface-2: #F5F8FD; --surface-3: #EAF1FB;
   --text-primary: #111827; --text-secondary: #34445B; --text-tertiary: #5B6C83;
   --border: #D5DFEA; --border-strong: #AABBD0;
   --accent-action: #2F67C8; --accent-hover: #2455AB; --accent-highlight: #2F67C8; --accent-surface: #E5EEFC;
