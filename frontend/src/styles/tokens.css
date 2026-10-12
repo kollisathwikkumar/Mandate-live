@@ -1,17 +1,17 @@
-/* Mandate clean light palette: white surfaces, near-black text, blue actions. */
+/* Mandate deep navy palette: dark-blue surfaces, crisp light text, white actions. */
 :root {
-  color-scheme: light;
-  --canvas: #EAF2FF; --surface-base: #EAF2FF; --surface-1: #F4F8FF; --surface-2: #FFFFFF; --surface-3: #DCE9FC;
-  --text-primary: #101828; --text-secondary: #475467; --text-tertiary: #667085;
-  --border: #D0D5DD; --border-strong: #98A2B3;
-  --accent-action: #2563EB; --accent-hover: #1D4ED8; --accent-highlight: #3B82F6; --accent-surface: #DCEAFF;
-  --brand-violet: #2563EB; --brand-rgb: 37 99 235;
-  --indigo-surface: #E7EEFF; --state-success: #ECFDF3; --state-success-text: #027A48;
-  --state-attention: #FFFAEB; --state-attention-text: #B54708; --state-danger: #FEF3F2; --state-danger-text: #B42318;
-  --state-neutral: #F2F4F7; --state-neutral-text: #344054;
-  --focus: var(--accent-highlight); --hover: var(--surface-3); --shadow: 0 24px 64px rgb(16 24 40 / .12);
-  --accent-rgb: 37 99 235; --neutral-rgb: 16 24 40; --black-rgb: 0 0 0;
-  --success-rgb: 236 253 243; --attention-rgb: 255 250 235; --danger-rgb: 254 243 242;
+  color-scheme: dark;
+  --canvas: #071426; --surface-base: #0B1C33; --surface-1: #102542; --surface-2: #132D4D; --surface-3: #1A3A60;
+  --text-primary: #F5F8FF; --text-secondary: #C3D0E2; --text-tertiary: #8FA6C2;
+  --border: #294565; --border-strong: #456385;
+  --accent-action: #3B82F6; --accent-hover: #60A5FA; --accent-highlight: #93C5FD; --accent-surface: #153B68;
+  --brand-violet: #60A5FA; --brand-rgb: 96 165 250;
+  --indigo-surface: #172E4D; --state-success: #123A31; --state-success-text: #6EE7B7;
+  --state-attention: #443514; --state-attention-text: #FCD34D; --state-danger: #421F2B; --state-danger-text: #FDA4AF;
+  --state-neutral: #1C3552; --state-neutral-text: #D0DCEE;
+  --focus: var(--accent-highlight); --hover: var(--surface-3); --shadow: 0 24px 64px rgb(0 0 0 / .35);
+  --accent-rgb: 96 165 250; --neutral-rgb: 245 248 255; --black-rgb: 0 0 0;
+  --success-rgb: 18 58 49; --attention-rgb: 68 53 20; --danger-rgb: 66 31 43;
   --ink: var(--canvas); --surface: var(--surface-1); --line: var(--border); --muted: var(--text-secondary); --quiet: var(--text-tertiary);
   --violet: var(--brand-violet); --violet-strong: var(--brand-violet); --mint: var(--state-success-text); --red: var(--state-danger-text); --amber: var(--state-attention-text);
   --type-body: 14px; --type-label: 12px; --type-meta: 11px;
