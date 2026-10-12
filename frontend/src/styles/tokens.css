@@ -1,12 +1,12 @@
 /* Mandate clean light palette: white surfaces, near-black text, blue actions. */
 :root {
   color-scheme: light;
-  --canvas: #FFFFFF; --surface-base: #F7F9FC; --surface-1: #FFFFFF; --surface-2: #F3F6FA; --surface-3: #E9EFF7;
+  --canvas: #EAF2FF; --surface-base: #EAF2FF; --surface-1: #F4F8FF; --surface-2: #FFFFFF; --surface-3: #DCE9FC;
   --text-primary: #101828; --text-secondary: #475467; --text-tertiary: #667085;
   --border: #D0D5DD; --border-strong: #98A2B3;
-  --accent-action: #2563EB; --accent-hover: #1D4ED8; --accent-highlight: #3B82F6; --accent-surface: #EFF6FF;
+  --accent-action: #2563EB; --accent-hover: #1D4ED8; --accent-highlight: #3B82F6; --accent-surface: #DCEAFF;
   --brand-violet: #2563EB; --brand-rgb: 37 99 235;
-  --indigo-surface: #EEF2FF; --state-success: #ECFDF3; --state-success-text: #027A48;
+  --indigo-surface: #E7EEFF; --state-success: #ECFDF3; --state-success-text: #027A48;
   --state-attention: #FFFAEB; --state-attention-text: #B54708; --state-danger: #FEF3F2; --state-danger-text: #B42318;
   --state-neutral: #F2F4F7; --state-neutral-text: #344054;
   --focus: var(--accent-highlight); --hover: var(--surface-3); --shadow: 0 24px 64px rgb(16 24 40 / .12);
