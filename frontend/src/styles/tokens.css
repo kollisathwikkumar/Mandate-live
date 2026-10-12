@@ -1,17 +1,17 @@
-/* Mandate graphite + jade palette, with violet reserved for brand moments. */
+/* Mandate clean light palette: white surfaces, near-black text, blue actions. */
 :root {
-  color-scheme: dark;
-  --canvas: #090D0B; --surface-base: #0B100D; --surface-1: #101713; --surface-2: #151D18; --surface-3: #1B251F;
-  --text-primary: #F2F6F2; --text-secondary: #B0BDB4; --text-tertiary: #819087;
-  --border: #29372F; --border-strong: #3A4B40;
-  --accent-action: #247A49; --accent-hover: #2F9259; --accent-highlight: #82E0A0; --accent-surface: #13251A;
-  --brand-violet: #A58BFF; --brand-rgb: 165 139 255;
-  --indigo-surface: #171426; --state-success: #10291B; --state-success-text: #82E0A0;
-  --state-attention: #302513; --state-attention-text: #F0C66E; --state-danger: #32171B; --state-danger-text: #FF858B;
-  --state-neutral: #18211D; --state-neutral-text: #AAB8AF;
-  --focus: var(--accent-highlight); --hover: var(--surface-3); --shadow: 0 24px 64px rgb(0 0 0 / .5);
-  --accent-rgb: 130 224 160; --neutral-rgb: 242 246 242; --black-rgb: 9 13 11;
-  --success-rgb: 16 41 27; --attention-rgb: 48 37 19; --danger-rgb: 50 23 27;
+  color-scheme: light;
+  --canvas: #FFFFFF; --surface-base: #F7F9FC; --surface-1: #FFFFFF; --surface-2: #F3F6FA; --surface-3: #E9EFF7;
+  --text-primary: #101828; --text-secondary: #475467; --text-tertiary: #667085;
+  --border: #D0D5DD; --border-strong: #98A2B3;
+  --accent-action: #2563EB; --accent-hover: #1D4ED8; --accent-highlight: #3B82F6; --accent-surface: #EFF6FF;
+  --brand-violet: #2563EB; --brand-rgb: 37 99 235;
+  --indigo-surface: #EEF2FF; --state-success: #ECFDF3; --state-success-text: #027A48;
+  --state-attention: #FFFAEB; --state-attention-text: #B54708; --state-danger: #FEF3F2; --state-danger-text: #B42318;
+  --state-neutral: #F2F4F7; --state-neutral-text: #344054;
+  --focus: var(--accent-highlight); --hover: var(--surface-3); --shadow: 0 24px 64px rgb(16 24 40 / .12);
+  --accent-rgb: 37 99 235; --neutral-rgb: 16 24 40; --black-rgb: 0 0 0;
+  --success-rgb: 236 253 243; --attention-rgb: 255 250 235; --danger-rgb: 254 243 242;
   --ink: var(--canvas); --surface: var(--surface-1); --line: var(--border); --muted: var(--text-secondary); --quiet: var(--text-tertiary);
   --violet: var(--brand-violet); --violet-strong: var(--brand-violet); --mint: var(--state-success-text); --red: var(--state-danger-text); --amber: var(--state-attention-text);
   --type-body: 14px; --type-label: 12px; --type-meta: 11px;
