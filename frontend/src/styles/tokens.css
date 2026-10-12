@@ -1,17 +1,17 @@
-/* Mandate deep navy palette: dark-blue surfaces, crisp light text, white actions. */
+/* Mandate palette: deep blue canvas, clean white workspace surfaces, vivid blue accents. */
 :root {
-  color-scheme: dark;
-  --canvas: #071426; --surface-base: #0B1C33; --surface-1: #102542; --surface-2: #132D4D; --surface-3: #1A3A60;
-  --text-primary: #F5F8FF; --text-secondary: #C3D0E2; --text-tertiary: #8FA6C2;
-  --border: #294565; --border-strong: #456385;
-  --accent-action: #3B82F6; --accent-hover: #60A5FA; --accent-highlight: #93C5FD; --accent-surface: #153B68;
-  --brand-violet: #60A5FA; --brand-rgb: 96 165 250;
-  --indigo-surface: #172E4D; --state-success: #123A31; --state-success-text: #6EE7B7;
-  --state-attention: #443514; --state-attention-text: #FCD34D; --state-danger: #421F2B; --state-danger-text: #FDA4AF;
-  --state-neutral: #1C3552; --state-neutral-text: #D0DCEE;
+  color-scheme: light;
+  --canvas: #123B78; --surface-base: #123B78; --surface-1: #FFFFFF; --surface-2: #F3F7FC; --surface-3: #E8EFF8;
+  --text-primary: #111827; --text-secondary: #34445B; --text-tertiary: #5B6C83;
+  --border: #D5DFEA; --border-strong: #AABBD0;
+  --accent-action: #2F67C8; --accent-hover: #2455AB; --accent-highlight: #2F67C8; --accent-surface: #E5EEFC;
+  --brand-violet: #2F67C8; --brand-rgb: 47 103 200;
+  --indigo-surface: #E8EFF8; --state-success: #E3F4EA; --state-success-text: #176B3A;
+  --state-attention: #FFF3D4; --state-attention-text: #805400; --state-danger: #FCE8E8; --state-danger-text: #A82222;
+  --state-neutral: #E8EFF8; --state-neutral-text: #26384F;
   --focus: var(--accent-highlight); --hover: var(--surface-3); --shadow: 0 24px 64px rgb(0 0 0 / .35);
-  --accent-rgb: 96 165 250; --neutral-rgb: 245 248 255; --black-rgb: 0 0 0;
-  --success-rgb: 18 58 49; --attention-rgb: 68 53 20; --danger-rgb: 66 31 43;
+  --accent-rgb: 47 103 200; --neutral-rgb: 255 255 255; --black-rgb: 10 25 48;
+  --success-rgb: 227 244 234; --attention-rgb: 255 243 212; --danger-rgb: 252 232 232;
   --ink: var(--canvas); --surface: var(--surface-1); --line: var(--border); --muted: var(--text-secondary); --quiet: var(--text-tertiary);
   --violet: var(--brand-violet); --violet-strong: var(--brand-violet); --mint: var(--state-success-text); --red: var(--state-danger-text); --amber: var(--state-attention-text);
   --type-body: 14px; --type-label: 12px; --type-meta: 11px;
