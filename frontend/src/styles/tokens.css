@@ -1,17 +1,18 @@
-/* Mandate authority-chamber tokens. Black/white are structural; color carries roles. */
+/* Mandate graphite + jade palette, with violet reserved for brand moments. */
 :root {
   color-scheme: dark;
-  --canvas: #000000; --surface-base: #000000; --surface-1: #0A0A0A; --surface-2: #111111; --surface-3: #171717;
-  --text-primary: #FFFFFF; --text-secondary: #A3A3A3; --text-tertiary: #858585;
-  --border: #262626; --border-strong: #333333;
-  --accent-action: #4C1D95; --accent-hover: #5B21B6; --accent-highlight: #9665FF; --accent-surface: #190E29;
-  --indigo-surface: #10101E; --state-success: #082A20; --state-success-text: #4AAE88;
-  --state-attention: #30220D; --state-attention-text: #C49645; --state-danger: #330D16; --state-danger-text: #DC5D76;
-  --state-neutral: #171C24; --state-neutral-text: #A3ADBC;
+  --canvas: #090D0B; --surface-base: #0B100D; --surface-1: #101713; --surface-2: #151D18; --surface-3: #1B251F;
+  --text-primary: #F2F6F2; --text-secondary: #B0BDB4; --text-tertiary: #819087;
+  --border: #29372F; --border-strong: #3A4B40;
+  --accent-action: #247A49; --accent-hover: #2F9259; --accent-highlight: #82E0A0; --accent-surface: #13251A;
+  --brand-violet: #A58BFF; --brand-rgb: 165 139 255;
+  --indigo-surface: #171426; --state-success: #10291B; --state-success-text: #82E0A0;
+  --state-attention: #302513; --state-attention-text: #F0C66E; --state-danger: #32171B; --state-danger-text: #FF858B;
+  --state-neutral: #18211D; --state-neutral-text: #AAB8AF;
   --focus: var(--accent-highlight); --hover: var(--surface-3); --shadow: 0 24px 64px rgb(0 0 0 / .5);
-  --accent-rgb: 109 40 217; --neutral-rgb: 255 255 255; --black-rgb: 0 0 0;
-  --success-rgb: 8 42 32; --attention-rgb: 48 34 13; --danger-rgb: 51 13 22;
+  --accent-rgb: 130 224 160; --neutral-rgb: 242 246 242; --black-rgb: 9 13 11;
+  --success-rgb: 16 41 27; --attention-rgb: 48 37 19; --danger-rgb: 50 23 27;
   --ink: var(--canvas); --surface: var(--surface-1); --line: var(--border); --muted: var(--text-secondary); --quiet: var(--text-tertiary);
-  --violet: var(--accent-highlight); --violet-strong: var(--accent-action); --mint: var(--state-success-text); --red: var(--state-danger-text); --amber: var(--state-attention-text);
+  --violet: var(--brand-violet); --violet-strong: var(--brand-violet); --mint: var(--state-success-text); --red: var(--state-danger-text); --amber: var(--state-attention-text);
   --type-body: 14px; --type-label: 12px; --type-meta: 11px;
 }
